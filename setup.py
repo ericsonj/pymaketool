@@ -11,7 +11,7 @@ setuptools.setup(
     description="Python Makefile Tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    scripts = ['scripts/pymaketool', 'scripts/pymaketesting.py'],
+    scripts = ['scripts/pymaketool', 'scripts/pymaketesting'],
     url="https://github.com/ericsonj/pymaketool",
     packages=setuptools.find_packages(),
     classifiers=[
