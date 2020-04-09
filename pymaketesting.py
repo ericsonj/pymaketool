@@ -1,0 +1,99 @@
+# Copyright (c) 2020, Ericson Joseph
+# 
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright notice,
+#       this list of conditions and the following disclaimer in the documentation
+#       and/or other materials provided with the distribution.
+#     * Neither the name of pyMakeTool nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+import sys
+import re
+from pathlib import Path
+import os
+import shutil
+
+ceedlingPath = Path('Test/ceedling')
+testrgx = re.compile('^[ ]*[/][*][ ]*[<][ ]*test[ ]*[>][ ]*[*][/].*')
+testrwgend = re.compile('^[ ]*[/][*][ ]*[<][ ]*[/]test[ ]*[>][ ]*[*][/].*')
+
+def findFile(filename):
+    files = Path('.').rglob(filename)
+    srcfile = None
+    for f in files:
+        if not ceedlingPath in f.parents:
+            srcfile = f
+
+    return srcfile
+
+def generateTestSrc(inputfile, outputfile):
+    count = 0
+    for line in inputfile:
+
+        if testrgx.match(line):
+            count = count + 1
+        elif testrwgend.match(line):
+            outputfile.write(line)
+            count = count - 1
+        
+        if count > 0:
+            outputfile.write(line)
+            
+
+if (len(sys.argv) != 2):
+    print("make test MODULE=<name>")
+else:
+    module = sys.argv[1]
+    c_file = module + ".c"
+    h_file = module + ".h"
+    print("C {}".format(c_file))
+    print("H {}".format(h_file))
+    srcfile = findFile(c_file)
+    if srcfile:
+        print(srcfile)
+    
+    incfile = findFile(h_file)
+    if incfile:
+        print(incfile)
+        
+    testFile = 'Test' / srcfile.parent / Path('test_'+srcfile.name)
+    ceedlingTest = 'Test/ceedling/test/' / Path('test_'+srcfile.name)
+    shutil.copyfile(testFile, ceedlingTest)
+    print("cp {} {}".format(testFile, ceedlingTest))
+
+    srcs = Path(srcfile.parent).rglob('*.c')
+    for src in srcs:
+        srcbycl = open('Test/ceedling/src/' + src.name, 'w')
+        srcfiler = open(src, 'r')
+        generateTestSrc(srcfiler, srcbycl)
+        srcbycl.close()
+        srcfiler.close()
+    
+    incs = Path(srcfile.parent).rglob('*.h')
+    for inc in incs:
+        incbycl = open('Test/ceedling/src/' + inc.name, 'w')
+        incfiler = open(inc, 'r')
+        generateTestSrc(incfiler, incbycl)
+        incbycl.close()
+        incfiler.close()
+    
