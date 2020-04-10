@@ -37,8 +37,9 @@
 
 # listconf = {'C_INCLUDES': [...], 'C_SYMBOLS' : [...], 'CPP_INCLUDES': [...], 'CPP_SYMBOLS': [...]}
 from pathlib import Path
+from . import preconts as K
 
-CPROJECT_TEMPLATE = '.cproject_template'
+CPROJECT_TEMPLATE = K.PYMAKEPROJ + '/.cproject_template'
 CPROJECT = '.cproject'
 
 WILDCARD_C_INCLUDES = '<!--wildcard_c_includes-->'

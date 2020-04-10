@@ -57,6 +57,11 @@ def readModule(modPath, compilerOpts):
     flags = []
 
     try:
+        result = getattr(mod, K.MOD_F_INIT)(modHandle)
+    except:
+        pass
+
+    try:
         result = getattr(mod, K.MOD_F_GETSRCS)(modHandle)
         addToList(srcs, result)
     except:

@@ -28,7 +28,7 @@
 
 from pathlib import Path
 from . import preconts as K
-
+from . import git
 
 class SrcType:
     C = ['.c']
@@ -57,6 +57,14 @@ class CompilerOptions:
         self.opts[key] = value
         return self.opts
 
+    def addOption(self, key, value):
+        if key in self.opts.keys():
+            if isinstance(value, str):
+                self.opts[key].append(value)
+            elif isinstance(value, list):
+                self.opts[key] = self.opts[key] + value
+        else:
+            self.opts[key] = value
 
 class GCC_CompilerOpts(CompilerOptions):
     def __init__(self, copts):
@@ -66,6 +74,9 @@ class GCC_CompilerOpts(CompilerOptions):
             super().__init__(copts)
         else:
             pass
+
+    def addGeneralOpt(self, opts:list):
+        self.addOption(K.MK_KEY_GENERAL_OPTS, opts)
 
     def setOptimizationOpts(self, opts: list):
         self.setOption(K.MK_KEY_OPTIMIZE_OPTS, opts)
@@ -153,6 +164,18 @@ class ModuleHandle:
 
     def getGeneralCompilerOpts(self):
         return self.gCompOpts
+
+    def getRelaptivePath(self):
+        return self.modDir
+
+    def initGitModule(self, url, folder, ispymakeproj=False, ignoreList=[]):
+        folder = Path(Path(self.getRelaptivePath()) / Path(folder))
+
+        ignoreModule = []
+        ignoreModule += self.getFilesByRegex(ignoreList)
+
+        git.addSubmodule(url, str(folder), ispymakeproj, ignoreModule)
+
 
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)

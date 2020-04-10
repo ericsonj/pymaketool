@@ -26,6 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+PYMAKEPROJ  = '.pymakeproj'
 MAKEFILE_PY = 'Makefile.py'
 VARS_MK     = 'vars.mk'
 TARGETS_MK  = 'targets.mk'
@@ -36,6 +37,7 @@ MOD_WORKSPACE       = 'modPath'
 MOD_COMPILER_OPTS   = 'compilerOpts'
 
 
+MOD_F_INIT              = 'init'
 MOD_F_GETSRCS           = 'getSrcs'
 MOD_F_GETINCS           = 'getIncs'
 MOD_F_GETCOMPILEROPTS   = 'getCompilerOpts'

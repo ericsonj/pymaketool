@@ -39,10 +39,47 @@ import subprocess
 import json
 import re
 import copy
+import argparse
 from pymakelib import eclipse_cproject as cp
 from pymakelib import preconts as K
 from pymakelib import prelib as plib
 from pymakelib import moduleignore
+from pymakelib import eclipse_files
+from pymakelib import make_files
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--init', help='init pymaketool project', action="store_true",)
+parser.add_argument('--version', action='version', version='%(prog)s 1.0.1')
+args = parser.parse_args()
+
+if args.init:
+    fproject = open('.project', 'w')
+    name = os.path.basename(os.getcwd())
+    print('Init {0}'.format(name))
+    fproject.write(eclipse_files.FILE_PROJECT.format(name))
+    fproject.close()
+    try:
+        os.mkdir(K.PYMAKEPROJ)
+    except:
+        pass
+
+    fileset = [
+        [K.PYMAKEPROJ + '/.cproject_template',eclipse_files.FILE_CPROJECT_TEMP],
+        ['Makefile', make_files.FILE_MAKEFILE],
+        ['makefile.mk', make_files.FILE_MAKEFILE_MK],
+        ['Makefile.py', make_files.FILE_MAKEFILE_PY]
+    ]
+
+    for f in fileset:
+        try:
+            fileout = open(f[0], 'x')
+            fileout.write(f[1])
+            fileout.close()
+        except Exception as e:
+            print(e)
+
+    sys.exit()
 
 
 USE_EXCLUDE_FOLDERS = True
@@ -51,13 +88,17 @@ USE_EXCLUDE_FOLDERS = True
 # ------------------------------------------------------
 # ------------------------------------------------------
 
+if not os.path.exists(K.PYMAKEPROJ):
+    print('Not a pymaketool project')
+    sys.exit()
+
+
 
 modules = []
 modulesPaths = []
 ignoreModuleList = []
 
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
-
 
 ignoreModuleList = moduleignore.readIgnoreFile()
 

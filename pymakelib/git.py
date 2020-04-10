@@ -25,7 +25,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+import os
 from pathlib import Path
 import subprocess
 from . import moduleignore
@@ -62,6 +62,9 @@ def getDescribe(options='--long'):
         
     return desc
 
+
+def printRelativePath(filemacro):
+    print(os.path.dirname(os.path.abspath(filemacro)))
 
 def addSubmodule(url, dst_dir, isPyMakeModule=False, exclModulesPaths=[]):
     dstDir = Path(Path(dst_dir) / '.git')
