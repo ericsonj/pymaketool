@@ -28,16 +28,16 @@ FILE_MAKEFILE = """#
 
 .DEFAULT_GOAL := all
 
-%:      prebuild
-        @time -p $(MAKE) -f makefile.mk $@
+%: prebuild
+\t@time -p $(MAKE) -f makefile.mk $@
 
 prebuild:
-        @pymaketool
+\t@pymaketool
 
 .PHONY: test
 test_%:
-        @pymaketesting $(subst test_,,$@)
-        $(MAKE) -C Test/ceedling $(subst test_,,$@)
+\t@pymaketesting $(subst test_,,$@)
+\t$(MAKE) -C Test/ceedling $(subst test_,,$@)
 
 .INTERMEDIATE: prebuild
 
@@ -78,7 +78,7 @@ FILE_MAKEFILE_MK = """# Copyright (c) 2020, Ericson Joseph
 
 ## Local functions
 define logger-compile
-	@printf "%6s\t%-30s\n" $(1) $(2)
+	@printf \"%6s\\t%-30s\\n\" $(1) $(2)
 endef
 
 .DEFAULT_GOAL := all
