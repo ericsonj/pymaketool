@@ -1,5 +1,4 @@
-FILE_PROJECT = """
-<?xml version="1.0" encoding="UTF-8"?>
+FILE_PROJECT = """<?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>{0}</name>
 	<comment></comment>
@@ -34,8 +33,7 @@ FILE_PROJECT = """
 </projectDescription>
 """
 
-FILE_CPROJECT_TEMP = """
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+FILE_CPROJECT_TEMP = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="0.78511047">
