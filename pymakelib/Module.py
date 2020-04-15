@@ -130,10 +130,14 @@ class ModuleHandle:
             srcs += list(Path(self.modDir).rglob('*' + ext))
         return srcs
 
-    def getFilesByRegex(self, regexs):
+    def getFilesByRegex(self, regexs, relativePath=None):
+        modulePath = Path(self.modDir)
+        if relativePath:
+            modulePath = modulePath / Path(relativePath)
+        
         srcs = []
         for r in regexs:
-            srcs += list(Path(self.modDir).rglob(r))
+            srcs += list(modulePath.rglob(r))
 
         srcs = list(dict.fromkeys(srcs))
         return srcs
@@ -169,12 +173,12 @@ class ModuleHandle:
         return self.modDir
 
     def initGitModule(self, url, folder, ispymakeproj=False, ignoreList=[]):
-        folder = Path(Path(self.getRelaptivePath()) / Path(folder))
-
+        absfolder = Path(Path(self.getRelaptivePath()) / Path(folder))
+        
         ignoreModule = []
-        ignoreModule += self.getFilesByRegex(ignoreList)
-
-        git.addSubmodule(url, str(folder), ispymakeproj, ignoreModule)
+        ignoreModule += self.getFilesByRegex(ignoreList, relativePath=Path(folder))
+        
+        git.addSubmodule(url, str(absfolder), ispymakeproj, ignoreModule)
 
 
     def __str__(self):
