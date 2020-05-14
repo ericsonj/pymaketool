@@ -32,7 +32,7 @@ FILE_MAKEFILE = """#
 \t@time -p $(MAKE) -f makefile.mk $@
 
 prebuild:
-\t@pymaketool
+\t@pymaketool $(or $(MAKECMDGOALS),all)
 
 .PHONY: test
 test_%:
@@ -81,12 +81,18 @@ define logger-compile
 	@printf \"%6s\\t%-30s\\n\" $(1) $(2)
 endef
 
+define logger-compile-lib
+	@printf "%6s\t%-15s%-30s\n" $(1) $(2) $(3)
+endef
+
 .DEFAULT_GOAL := all
 
 CSRC  =
 ASSRC = 
 INCS  = 
 COMPILER_FLAGS =
+SLIBS_OBJECTS = 
+SLIBS_NAMES = 
 
 include vars.mk
 include srcs.mk
@@ -119,6 +125,8 @@ clean: clean_targets
 .PHONY: clean
 
 -include $(OBJECTS:.o=.d)
+
+.FORCE:
 """
 
 FILE_MAKEFILE_PY = """import os

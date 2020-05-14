@@ -49,9 +49,12 @@ from pymakelib import make_files
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('goal', type=str, help='Makefile command goal')
 parser.add_argument('--init', help='init pymaketool project', action="store_true",)
-parser.add_argument('--version', action='version', version='%(prog)s 1.0.1')
+parser.add_argument('--version', action='version', version='%(prog)s 1.0.0')
 args = parser.parse_args()
+
+goal = args.goal
 
 if args.init:
     fproject = open('.project', 'w')
@@ -93,7 +96,6 @@ if not os.path.exists(K.PYMAKEPROJ):
     sys.exit()
 
 
-
 modules = []
 modulesPaths = []
 ignoreModuleList = []
@@ -106,7 +108,7 @@ ignoreModuleList = moduleignore.readIgnoreFile()
 modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
 # Load modules
 for filename in modulesPaths:
-    mod = plib.readModule(filename, copy.deepcopy(compilerOpts))
+    mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal)
     modules.append(mod)
 
 for ex in ignoreModuleList:
@@ -126,11 +128,23 @@ for mod in modules:
     srcsfile.write("#{0:^50}#\n".format(str(mod.filename)))
     srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
 
+    if mod.staticLib:
+        mkkey = mod.staticLib.name.upper()
+        srcsfile.write('{}_NAME = {}\n'.format(mkkey, mod.staticLib.name))
+        srcsfile.write('{}_OUTPUT = {}\n'.format(mkkey, str(mod.staticLib.outputDir)))
+        library = mod.staticLib.outputDir / Path('lib'+mod.staticLib.name+'.a')
+        srcsfile.write('{}_AR = {}\n'.format(mkkey, str(library)))
+        srcsfile.write('\n')
+
+    prefixSrcs = ""
+    if mod.staticLib:
+        prefixSrcs = mod.staticLib.name.upper() + "_"
+        
     for src in mod.srcs:
         if str(src).endswith('.c'):
-            srcsfile.write("CSRC += {}\n".format(src))
+            srcsfile.write("{}CSRC += {}\n".format(prefixSrcs, src))
         elif str(src).endswith('.s'):
-            srcsfile.write("ASSRC += {}\n".format(src))
+            srcsfile.write("{}ASSRC += {}\n".format(prefixSrcs, src))
 
     srcsfile.write('\n')
 
@@ -141,10 +155,39 @@ for mod in modules:
     srcsfile.write('\n')
 
     if mod.flags:
-        for src in mod.srcs:
-            objs = str(src).replace('.c', '.o').replace('.s', '.o')
-            srcsfile.write("{} : CFLAGS = {}\n".format(
-                projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
+        if mod.staticLib:
+            for src in mod.srcs:
+                objs = str(src).replace('.c', '.o').replace('.s', '.o')
+                mkkey = mod.staticLib.name.upper()
+                outputObj = '$({}_OUTPUT)/'.format(mkkey) + str(objs)
+                srcsfile.write("{} : CFLAGS = {}\n".format(
+                    outputObj, plib.compilerOptsByModuleToLine(mod.flags)))
+        else:
+            for src in mod.srcs:
+                objs = str(src).replace('.c', '.o').replace('.s', '.o')
+                srcsfile.write("{} : CFLAGS = {}\n".format(
+                    projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
+
+    srcsfile.write('\n')
+
+    if mod.staticLib:
+        mkkey = mod.staticLib.name.upper()
+        srcsfile.write('{0}_OBJECTS = $({0}_CSRC:%.c=$({0}_OUTPUT)/%.o) $({0}_CSRC:%.s=$({0}_OUTPUT)/%.o)\n'.format(mkkey))
+        srcsfile.write('\n')
+        srcsfile.write('$({0}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,"CC",\"{1}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<\n'.format(mkkey, library))
+        srcsfile.write('\n')
+        srcsfile.write('$({0}_AR): $({0}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $<'.format(mkkey))
+        srcsfile.write('\n\n')
+        srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.name))
+        srcsfile.write('SLIBS_OBJECTS += {}\n'.format(library))
+        if mod.staticLib.rebuild:
+            srcsfile.write('\n')
+            for src in mod.srcs:
+                obj = str(src).replace('.c', '.o').replace('.s', '.o')
+                mkkey = mod.staticLib.name.upper()
+                outputObj = '$({}_OUTPUT)/'.format(mkkey) + str(obj)
+                srcsfile.write("{} : .FORCE\n".format(outputObj))
+            srcsfile.write('\n\n')
 
     srcsfile.write('\n')
 

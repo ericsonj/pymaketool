@@ -32,6 +32,7 @@ from . import preconts as K
 from .Module import ModuleHandle
 from .Module import CompilerOptions
 from .Module import Module
+from .Module import StaticLibrary
 
 def addToList(dstList: list, values):
     if isinstance(values, list):
@@ -45,19 +46,22 @@ def addToList(dstList: list, values):
         dstList.append(values)
 
 
-def readModule(modPath, compilerOpts):
+def readModule(modPath, compilerOpts, goals=None):
     lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
     mod = importlib.util.module_from_spec(lib)
     lib.loader.exec_module(mod)
     
-    modHandle = ModuleHandle(modPath.parent, compilerOpts)
+    modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
     
     srcs = []
     incs = []
     flags = []
+    staticLib = None
 
     try:
         result = getattr(mod, K.MOD_F_INIT)(modHandle)
+        if isinstance(result, StaticLibrary):
+            staticLib = result
     except:
         pass
 
@@ -82,7 +86,7 @@ def readModule(modPath, compilerOpts):
     except Exception as e:
         print(e)
 
-    return Module(srcs, incs, flags, modPath)
+    return Module(srcs, incs, flags, modPath, staticLib=staticLib)
 
 
 def getLineSeparator(key: str, num: int):
@@ -240,7 +244,7 @@ def read_Makefilepy():
                 for i in range(len(labels)):
                     if labels[i] == 'TARGET':
                         targetsmk.write("\n$({}): {}\n".format(
-                            labels[i], '$(OBJECTS)'))
+                            labels[i], '$(OBJECTS) $(SLIBS_OBJECTS)'))
                     else:
                         targetsmk.write("\n$({}): $({})\n".format(
                             labels[i], labels[i-1]))

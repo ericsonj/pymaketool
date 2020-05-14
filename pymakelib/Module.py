@@ -26,6 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import hashlib
 from pathlib import Path
 from . import preconts as K
 from . import git
@@ -41,13 +42,42 @@ class IncType:
     CPP = ['.h', '.hpp', '.h++', '.hh']
 
 
+class StaticLibrary:
+    def __init__(self, name: str, outputDir: str, rebuild=False):
+        self.name = name
+        self.outputDir = Path(outputDir)
+        self.rebuild = rebuild
+
+    def setRebuild(self, rebuild: bool):
+        self.rebuild = rebuild
+
+    def rebuildByCheckStr(self, checkStr: str):
+        hs = hashlib.md5(checkStr.encode())
+        cksumfile = Path(self.outputDir / Path('lib' + self.name + '.cksum'))
+        hexstr = hs.hexdigest()
+        oldHash = ""
+        if cksumfile.exists():
+            cksumfile = open(str(cksumfile), 'r+')
+            oldHash = cksumfile.read()
+        else:
+            cksumfile = open(str(cksumfile), 'w')
+        
+        if hexstr != oldHash:
+            cksumfile.seek(0)
+            cksumfile.truncate(0)
+            cksumfile.seek(0)
+            cksumfile.write(str(hexstr))
+            self.setRebuild(True)
+
+        cksumfile.close()
+
 class Module:
-    def __init__(self, srcs, incs, flags, filename):
+    def __init__(self, srcs, incs, flags, filename, staticLib: StaticLibrary = None):
         self.srcs = srcs
         self.incs = incs
         self.flags = flags
         self.filename = filename
-
+        self.staticLib = staticLib
 
 class CompilerOptions:
     def __init__(self, opts: dict):
@@ -110,9 +140,10 @@ class GCC_CompilerOpts(CompilerOptions):
 
 
 class ModuleHandle:
-    def __init__(self, modDir, gCompOpts):
+    def __init__(self, modDir, gCompOpts, goal=None):
         self.modDir = modDir
         self.gCompOpts = CompilerOptions(gCompOpts)
+        self.goal = goal
 
     def getWorkspace(self):
         wk = {
@@ -180,6 +211,8 @@ class ModuleHandle:
         
         git.addSubmodule(url, str(absfolder), ispymakeproj, ignoreModule)
 
+    def getGoal(self):
+        return self.goal
 
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)
