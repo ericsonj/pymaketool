@@ -176,7 +176,7 @@ for mod in modules:
         srcsfile.write('\n')
         srcsfile.write('$({0}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,"CC",\"{1}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<\n'.format(mkkey, library))
         srcsfile.write('\n')
-        srcsfile.write('$({0}_AR): $({0}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $<'.format(mkkey))
+        srcsfile.write('$({0}_AR): $({0}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $({0}_OBJECTS)'.format(mkkey))
         srcsfile.write('\n\n')
         srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.name))
         srcsfile.write('SLIBS_OBJECTS += {}\n'.format(library))

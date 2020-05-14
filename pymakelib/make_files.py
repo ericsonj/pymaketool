@@ -82,7 +82,7 @@ define logger-compile
 endef
 
 define logger-compile-lib
-	@printf "%6s\t%-15s%-30s\n" $(1) $(2) $(3)
+	@printf \"%6s\\t%-25s%-30s\\n\" $(1) $(2) $(3)
 endef
 
 .DEFAULT_GOAL := all
