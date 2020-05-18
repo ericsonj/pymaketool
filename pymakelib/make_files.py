@@ -1,4 +1,4 @@
-FILE_MAKEFILE = """# 
+FILE_MAKEFILE = """# Copyright (c) 2020, Ericson Joseph
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -82,7 +82,7 @@ define logger-compile
 endef
 
 define logger-compile-lib
-	@printf \"%6s\\t%-25s%-30s\\n\" $(1) $(2) $(3)
+	@printf \"%6s\\t%-25s %-30s\\n\" $(1) $(2) $(3)
 endef
 
 .DEFAULT_GOAL := all
@@ -119,10 +119,13 @@ $(PROJECT_OUT)/%.o: %.s
 all: $(TARGETS)
 
 clean: clean_targets
-	@echo 'CLEAN'
-	rm -rf $(PROJECT_OUT)
+\t@echo 'CLEAN'
+\trm -rf $(PROJECT_OUT)
 
-.PHONY: clean
+cleanlibs:
+\trm -rf $(SLIBS_OBJECTS:%.a=%.cksum)	
+
+.PHONY: clean cleanlibs
 
 -include $(OBJECTS:.o=.d)
 
