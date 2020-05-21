@@ -65,27 +65,35 @@ class MemRegion:
         return MemRegion.PRINT_FORMAT.format(name, origin, end, length, free, using, bar, perc)
 
 
-def printBar(total, using, barlen=10, usingColor=False):
+def printBar(total, using, length=10, usingColor=False):
+    str = []
     if total == 0:
-        total = 10
-    rate = (using/total)
-    bar = '|'
+        total = 1
+        using = 0
+    str.append('|')
+    rate = using/total
+    color = '\033[91m'
+    if rate < 0.60:
+        color = '\033[92m'
+    elif rate < 0.90:
+        color = '\033[93m'
     if usingColor:
-        if (rate < 0.60):
-            bar = bar + '\033[92m'
-        elif (rate < 0.80):
-            bar = bar + '\033[93m'
-        else:
-            bar = bar + '\033[91m'
-
-    bar = bar + '{0:<'+str(barlen)+'}'
-
+        str.append(color)
+    unit = total/length
+    uunit = unit/8
+    a = int(using/uunit)
+    b = int(a/8)
+    c = a - b*8
+    str.append(chr(9608)*b)
+    if c > 0: 
+        str.append(chr(9615 - (1*c)))
+    s = b + (1 if c > 0 else 0)
+    str.append(' '*(length-s))
     if usingColor:
-        bar = bar + '\033[0m'
+        str.append('\033[0m')
 
-    bar = bar + '|'
-    return bar.format((chr(9607) * int(round(barlen*rate,1))))
-
+    str.append('|')
+    return ''.join(str)
 
 parser = argparse.ArgumentParser(description='Builder Analyzer for ARM firmware')
 parser.add_argument('mapfile', type=str, help='Map file .map')
