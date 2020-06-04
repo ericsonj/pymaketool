@@ -203,6 +203,7 @@ class ModuleHandle:
     def getRelaptivePath(self):
         return self.modDir
 
+    @DeprecationWarning
     def initGitModule(self, url, folder, ispymakeproj=False, ignoreList=[]):
         absfolder = Path(Path(self.getRelaptivePath()) / Path(folder))
         

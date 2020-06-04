@@ -66,6 +66,8 @@ def getDescribe(options='--long'):
 def printRelativePath(filemacro):
     print(os.path.dirname(os.path.abspath(filemacro)))
 
+
+@DeprecationWarning
 def addSubmodule(url, dst_dir, isPyMakeModule=False, exclModulesPaths=[]):
     dstDir = Path(Path(dst_dir) / '.git')
     if dstDir.exists():
