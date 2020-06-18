@@ -49,18 +49,17 @@ from pymakelib import make_files
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('goal', type=str, help='Makefile command goal')
-parser.add_argument('--init', help='init pymaketool project', action="store_true",)
-parser.add_argument('--version', action='version', version='%(prog)s 1.0.3')
+parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
+parser.add_argument('--init', type=str, help='initialize project', const=os.path.basename(os.getcwd()), dest='project_name', nargs='?')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.4')
 args = parser.parse_args()
 
 goal = args.goal
 
-if args.init:
+if args.project_name:
     fproject = open('.project', 'w')
-    name = os.path.basename(os.getcwd())
-    print('Init {0}'.format(name))
-    fproject.write(eclipse_files.FILE_PROJECT.format(name))
+    print('Init {0} project'.format(args.project_name))
+    fproject.write(eclipse_files.FILE_PROJECT.format(args.project_name))
     fproject.close()
     try:
         os.mkdir(K.PYMAKEPROJ)
@@ -95,6 +94,9 @@ if not os.path.exists(K.PYMAKEPROJ):
     print('Not a pymaketool project')
     sys.exit()
 
+if not goal:
+    print('pymaketool: error: Add a goal (target)')
+    sys.exit()
 
 modules = []
 modulesPaths = []
