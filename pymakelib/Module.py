@@ -78,6 +78,13 @@ class Module:
         self.flags = flags
         self.filename = filename
         self.staticLib = staticLib
+    
+    def getDirs(self):
+        dirs = []
+        for src in self.srcs:
+            dirs.append(Path(str(src)).parent)
+        dirs = list(set(dirs))
+        return dirs
 
 class CompilerOptions:
     def __init__(self, opts: dict):
