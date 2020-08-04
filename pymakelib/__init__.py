@@ -49,3 +49,5 @@ class D:
             return self.value
         else:
             return ''
+    def __str__(self):
+        return self.getDefine()
