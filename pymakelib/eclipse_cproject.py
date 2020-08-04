@@ -38,6 +38,7 @@
 # listconf = {'C_INCLUDES': [...], 'C_SYMBOLS' : [...], 'CPP_INCLUDES': [...], 'CPP_SYMBOLS': [...]}
 from pathlib import Path
 from . import preconts as K
+from . import D
 
 CPROJECT_TEMPLATE = K.PYMAKEPROJ + '/.cproject_template'
 CPROJECT = '.cproject'
@@ -103,6 +104,8 @@ def writeXmlSymbols(symList):
                     w.append('<listOptionValue builtIn=\"false\" value=\"{}=&quot;{}&quot;\"/>\n'.format(key, symList[key]))
                 elif isinstance(symList[key], bool):
                     w.append('<listOptionValue builtIn=\"false\" value=\"{}={}\"/>\n'.format(key, '1' if symList[key] else '0'))
+                elif isinstance(symList[key],D):
+                    w.append('<listOptionValue builtIn=\"false\" value=\"{}={}\"/>\n'.format(key, symList[key].getDefine()))
                 else:
                     w.append('<listOptionValue builtIn=\"false\" value=\"{}={}\"/>\n'.format(key, symList[key]))
             else:
