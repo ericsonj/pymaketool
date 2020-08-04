@@ -29,6 +29,7 @@
 from pathlib import Path
 import importlib.util
 from . import preconts as K
+from . import D
 from .Module import ModuleHandle
 from .Module import CompilerOptions
 from .Module import Module
@@ -114,6 +115,9 @@ def macrosDictToString(macros):
                 elif isinstance(macros[key], bool):
                     mstr.append(
                         '-D{}={}'.format(key, '1' if macros[key] else '0'))
+                elif isinstance(macros[key], D):
+                    mstr.append(
+                        '-D{}={}'.format(key, macros[key].getDefine()))
                 else:
                     mstr.append('-D{}={}'.format(key, macros[key]))
             else:

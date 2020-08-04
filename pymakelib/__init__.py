@@ -39,3 +39,13 @@ class MKVARS():
 
 def MOD_PATH(wk):
     return wk['modPath']
+
+# Direct define  __USE_FILE__: D(file.h) => -D__USE_FILE__=file.h
+class D:
+    def __init__(self, value):
+        self.value = value
+    def getDefine(self):
+        if isinstance(self.value, str):
+            return self.value
+        else:
+            return ''
