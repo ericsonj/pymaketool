@@ -50,4 +50,6 @@ class D:
         else:
             return ''
     def __str__(self):
-        return self.getDefine()
+        return str(self.getDefine())
+    def __repr__(self):
+       return str(self.getDefine())
