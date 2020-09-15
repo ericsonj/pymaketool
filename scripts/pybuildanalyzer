@@ -139,7 +139,9 @@ for line in mapfile:
             readNextLine = False
 mapfile.close()
 
-p = re.compile(r'^[.][a-zA-Z_-]+\s+0x[0-9a-fA-F]+\s+0x[0-9a-fA-F]+.*')
+
+
+p = re.compile(r'^[.][a-zA-Z0-9_-]+\s+0x[0-9a-fA-F]+\s+0x[0-9a-fA-F]+.*')
 upstream = list(filter(p.search, upstream))
 sections = []
 lines = upstream
