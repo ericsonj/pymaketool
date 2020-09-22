@@ -43,9 +43,21 @@ from . import D
 CPROJECT_TEMPLATE = K.PYMAKEPROJ + '/.cproject_template'
 CPROJECT = '.cproject'
 
+LANGUAGE_SETTINGS_TEMPLATE = K.PYMAKEPROJ + '/.language.settings_template'
+LANGUAGE_SETTINGS = '.settings/language.settings.xml'
+
+LANGUAGE_SETTING_PROVIDER = """
+                        <provider class="org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector" console="false" env-hash="-374963487674273350" id="org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector" keep-relative-paths="false" name="CDT GCC Built-in Compiler Settings" parameter="{0} -E -P -v -dD &quot;${{INPUTS}}&quot;" prefer-non-shared="true">
+                                <language-scope id="org.eclipse.cdt.core.gcc"/>
+                                <language-scope id="org.eclipse.cdt.core.g++"/>
+                        </provider>
+"""
+
 WILDCARD_C_INCLUDES = '<!--wildcard_c_includes-->'
 WILDCARD_C_SYMBOLS = '<!--wildcard_c_symbols-->'
 WILDCARD_C_EXCLUDE = '<!--wildcard_c_exclude-->'
+
+WILDCARD_LS_PROVIDER = '<!--wildcard_ls_provider-->'
 
 def generate_cproject(listconf: dict):
     print('Generate .cproject')
@@ -71,6 +83,24 @@ def generate_cproject(listconf: dict):
     finally:
         cproject_template.close()
         cproject.close()
+
+def generate_languageSettings(compilerSettings: dict):
+    print('Generate .setting/language.settings.xml')
+    try:
+        langsett_template = open(LANGUAGE_SETTINGS_TEMPLATE, 'r')
+        langsett = open(LANGUAGE_SETTINGS, 'w')
+
+        for line in langsett_template:
+            if(line.strip() == WILDCARD_LS_PROVIDER):
+                langsett.write(LANGUAGE_SETTING_PROVIDER.format(compilerSettings['CC']))
+            else:
+                langsett.write(line)
+
+    except IOError:
+        print('Files .cproject or .cproject_template no accessible')
+    finally:
+        langsett_template.close()
+        langsett.close()
 
 
 def writeXmlIncludes(incList):

@@ -30,6 +30,7 @@ PYMAKEPROJ  = '.pymakeproj'
 MAKEFILE_PY = 'Makefile.py'
 VARS_MK     = 'vars.mk'
 TARGETS_MK  = 'targets.mk'
+ECLIPSE_SETTING = '.settings'
 
 MODULEIGNORE_FILE   = '.moduleignore'
 

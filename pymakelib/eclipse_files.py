@@ -1,3 +1,16 @@
+FILE_LANGUAJE_SETTING_XML = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project>
+        <configuration id="0.78511047.1277977235" name="pymaketool">
+                <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
+                        <provider copy-of="extension" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider"/>
+                        <provider-reference id="org.eclipse.cdt.core.ReferencedProjectsLanguageSettingsProvider" ref="shared-provider"/>
+                        <provider-reference id="org.eclipse.cdt.managedbuilder.core.MBSLanguageSettingsProvider" ref="shared-provider"/>
+						<!--wildcard_ls_provider-->
+                </extension>
+        </configuration>
+</project>
+"""
+
 FILE_PROJECT = """<?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>{0}</name>
@@ -36,8 +49,8 @@ FILE_PROJECT = """<?xml version="1.0" encoding="UTF-8"?>
 FILE_CPROJECT_TEMP = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
-		<cconfiguration id="0.78511047">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.78511047" moduleId="org.eclipse.cdt.core.settings" name="Default">
+		<cconfiguration id="0.78511047.1277977235">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.78511047.1277977235" moduleId="org.eclipse.cdt.core.settings" name="pymaketool">
 				<externalSettings/>
 				<extensions>
 					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -50,8 +63,8 @@ FILE_CPROJECT_TEMP = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildProperties="" description="" id="0.78511047" name="Default" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=" parent="org.eclipse.cdt.build.core.prefbase.cfg">
-					<folderInfo id="0.78511047." name="/" resourcePath="">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="0.78511047.1277977235" name="pymaketool" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=" parent="org.eclipse.cdt.build.core.prefbase.cfg">
+					<folderInfo id="0.78511047.1277977235." name="/" resourcePath="">
 						<toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.922644828" name="No ToolChain" resourceTypeBasedDiscovery="false" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">
 							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF" id="org.eclipse.cdt.build.core.prefbase.toolchain.922644828.1436264033" name=""/>
 							<builder id="org.eclipse.cdt.build.core.settings.default.builder.1098600423" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="org.eclipse.cdt.build.core.settings.default.builder"/>
@@ -102,7 +115,7 @@ FILE_CPROJECT_TEMP = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 		<scannerConfigBuildInfo instanceId="0.711244623">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="0.78511047">
+		<scannerConfigBuildInfo instanceId="0.78511047.1277977235">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="0.207144966;0.207144966.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.304600552;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.2021731310">

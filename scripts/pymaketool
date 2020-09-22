@@ -51,7 +51,7 @@ from pymakelib import make_files
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
 parser.add_argument('--init', type=str, help='initialize project', const=os.path.basename(os.getcwd()), dest='project_name', nargs='?')
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.6')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.7')
 args = parser.parse_args()
 
 goal = args.goal
@@ -66,8 +66,14 @@ if args.project_name:
     except:
         pass
 
+    try:
+        os.mkdir(K.ECLIPSE_SETTING)
+    except Exception as e:
+        print(e)
+
     fileset = [
         [K.PYMAKEPROJ + '/.cproject_template',eclipse_files.FILE_CPROJECT_TEMP],
+        [K.PYMAKEPROJ + '/.language.settings_template', eclipse_files.FILE_LANGUAJE_SETTING_XML],
         ['Makefile', make_files.FILE_MAKEFILE],
         ['makefile.mk', make_files.FILE_MAKEFILE_MK],
         ['Makefile.py', make_files.FILE_MAKEFILE_PY]
@@ -103,6 +109,8 @@ modulesPaths = []
 ignoreModuleList = []
 
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
+
+
 
 ignoreModuleList = moduleignore.readIgnoreFile()
 
@@ -145,6 +153,8 @@ for mod in modules:
     for src in mod.srcs:
         if str(src).endswith('.c'):
             srcsfile.write("{}CSRC += {}\n".format(prefixSrcs, src))
+        elif str(src).endswith('.cpp'):
+            srcsfile.write("{}CXXSRC += {}\n".format(prefixSrcs, src))
         elif str(src).endswith('.s'):
             srcsfile.write("{}ASSRC += {}\n".format(prefixSrcs, src))
 
@@ -172,7 +182,9 @@ for mod in modules:
                     outputObj, plib.compilerOptsByModuleToLine(mod.flags)))
         else:
             for src in mod.srcs:
-                objs = str(src).replace('.c', '.o').replace('.s', '.o')
+                objs = str(src).replace('.cpp', '.o')
+                objs = objs.replace('.c', '.o')
+                objs = objs.replace('.s', '.o')
                 srcsfile.write("{} : CFLAGS = {}\n".format(
                     projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
 
@@ -260,3 +272,4 @@ cproject_setting = {
 }
 
 cp.generate_cproject(cproject_setting)
+cp.generate_languageSettings(compilerSettings)
