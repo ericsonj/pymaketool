@@ -39,6 +39,9 @@
 from pathlib import Path
 from . import preconts as K
 from . import D
+import os.path
+from os import path
+
 
 CPROJECT_TEMPLATE = K.PYMAKEPROJ + '/.cproject_template'
 CPROJECT = '.cproject'
@@ -87,6 +90,12 @@ def generate_cproject(listconf: dict):
 def generate_languageSettings(compilerSettings: dict):
     print('Generate .setting/language.settings.xml')
     try:
+        try:
+            if not (path.exists(K.ECLIPSE_SETTING)):
+                os.mkdir(K.ECLIPSE_SETTING)
+        except Exception as e:
+            print(e)
+            
         langsett_template = open(LANGUAGE_SETTINGS_TEMPLATE, 'r')
         langsett = open(LANGUAGE_SETTINGS, 'w')
 
