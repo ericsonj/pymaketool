@@ -8,6 +8,15 @@ pymaketool
 
 Release v\ |version|. (:ref:`Installation <install>`)
 
+.. image:: https://img.shields.io/pypi/l/pymaketool.svg
+    :target: https://pypi.org/project/pymaketool/
+
+.. image:: https://img.shields.io/pypi/wheel/pymaketool.svg
+    :target: https://pypi.org/project/pymaketool/
+
+.. image:: https://img.shields.io/pypi/pyversions/pymaketool.svg
+    :target: https://pypi.org/project/pymaketool/
+
 **pymaketool** is an elegant and simple tool to generate a C project with GNU Make files. 
 
 ----------------
