@@ -1,5 +1,3 @@
-# Python GNU Make Tool
+# pymaketool
 
-Python Makefile Tool for module embedded code
-
-![Image of pymaketool](img/pymaketool.jpg)
+Go to [Read the Docs](https://pymaketool.readthedocs.io/en/latest/)
