@@ -28,7 +28,6 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
 
 .. image:: ../../img/pymaketool.jpg
   :width: 450
-  :alt: Alternative text
 
 .. toctree::
    :maxdepth: 2
