@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="pymaketool-ericsonjoseph", # Replace with your own username
+    name="pymaketool",
     version="1.0.9",
     author="Ericson Joseph",
     author_email="ericsonjoseph@gmail.com",
@@ -13,6 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     scripts = ['scripts/pymaketool', 'scripts/pymaketesting', 'scripts/pybuildanalyzer'],
     url="https://github.com/ericsonj/pymaketool",
+    license="MIT",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
