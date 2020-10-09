@@ -35,13 +35,22 @@ Release v\ |version|. (:ref:`Installation <install>`)
 **pymaketool** allow to you create C projects with anything structure extremely easily.
 Use Eclipse IDE for open and edit your project, pymaketool generates the necessary files for this.
 
-.. image:: ../../img/pymaketool.jpg
-  :width: 450
+.. image:: img/pymaketool.jpg
+  :width: 400
+
+----------------
+
+**Structure of un pymaketool project**
+
+.. image:: img/project.jpg
+  :width: 700
+
 
 .. toctree::
    :maxdepth: 2
    
    user/install
+   user/makefile.py
 
 .. Indices and tables
 .. ==================
