@@ -108,12 +108,12 @@ modules = []
 modulesPaths = []
 ignoreModuleList = []
 
+# Add project path to sys.path for users scripts
+sys.path.append(str(os.getcwd()))
+
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
 
-
-
 ignoreModuleList = moduleignore.readIgnoreFile()
-
 
 modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
 # Load modules

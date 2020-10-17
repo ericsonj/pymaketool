@@ -6,13 +6,12 @@ Installation of pymaketool
 This part of the documentation covers the installation of pymaketool.
 The first step to using any software package is getting it properly installed.
 
-
 Install
 -------
 
-To install pymaketool, simply run this simple command in your terminal of choice::
+To install pymaketool (only support for python 3), simply run this simple command in your terminal of choice::
 
-    $ pip install git+https://github.com/ericsonj/pymaketool.git
+    $ pip install pymaketool
 
 Get the Source Code
 -------------------

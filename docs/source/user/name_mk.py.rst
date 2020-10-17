@@ -5,6 +5,8 @@
 
 Python file that find and return the sources to compile in the current path.
 
+The file name must end with **_mk.py**.
+
 .. image:: ../img/sample_app_mk.jpg
   :width: 300
 
