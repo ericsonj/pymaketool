@@ -52,6 +52,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
    user/install
    user/makefile.py
    user/name_mk.py
+   user/user_scripts
 
 .. Indices and tables
 .. ==================
