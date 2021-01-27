@@ -46,12 +46,13 @@ from pymakelib import prelib as plib
 from pymakelib import moduleignore
 from pymakelib import eclipse_files
 from pymakelib import make_files
+from pymakelib import plugin
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
 parser.add_argument('--init', type=str, help='initialize project', const=os.path.basename(os.getcwd()), dest='project_name', nargs='?')
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.10')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.11')
 args = parser.parse_args()
 
 goal = args.goal
@@ -270,6 +271,9 @@ cproject_setting = {
     'C_SYMBOLS': compilerOpts['MACROS'],
     'C_EXCLUDE': listToExclude
 }
+
+for initFunc in plugin.initPluginFuncs:
+    initFunc(cproject_setting, compilerSettings)
 
 cp.generate_cproject(cproject_setting)
 cp.generate_languageSettings(compilerSettings)
