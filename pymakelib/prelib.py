@@ -191,12 +191,11 @@ def read_Makefilepy():
                 else:
                     makevars.write(
                         'COMPILER_FLAGS += {}\n'.format(listToString(compOpts[key])))
-
         elif isinstance(compOpts, list):
             for item in compOpts:
                 makevars.write('COMPILER_FLAGS += {}\n'.format(item))
         else:
-            print("Not load getCompilerOpts")
+            print("Not load getCompilerOpts")   
     except:
         pass
 
@@ -264,7 +263,8 @@ def read_Makefilepy():
                 targetsmk.write("\n{}:\n".format('clean_targets'))
                 targetlist = ('$('+l+')' for l in labels)
                 targetsmk.write('\trm -rf {}\n'.format(' '.join(targetlist)))
-
+                if compOpts:
+                    compOpts['TARGETS'] = targets
     except Exception as e:
         print(e)
 

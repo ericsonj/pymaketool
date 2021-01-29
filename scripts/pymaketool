@@ -46,7 +46,7 @@ from pymakelib import prelib as plib
 from pymakelib import moduleignore
 from pymakelib import eclipse_files
 from pymakelib import make_files
-from pymakelib import plugin
+from pymakelib import Addon
 
 
 parser = argparse.ArgumentParser()
@@ -267,13 +267,18 @@ if (USE_EXCLUDE_FOLDERS):
     
 
 cproject_setting = {
+    'C_SETTINGS': projSettings,
+    'C_TARGETS': compilerOpts['TARGETS'],
     'C_INCLUDES': strIncs,
     'C_SYMBOLS': compilerOpts['MACROS'],
     'C_EXCLUDE': listToExclude
 }
 
-for initFunc in plugin.initPluginFuncs:
+# Execute init function of plugins
+for initFunc in Addon.initAddonFuncs:
     initFunc(cproject_setting, compilerSettings)
 
-cp.generate_cproject(cproject_setting)
-cp.generate_languageSettings(compilerSettings)
+# Execute class of plugins
+for obj in Addon.initAddonClass:
+    p = obj(cproject_setting, compilerSettings)
+    p.init()
