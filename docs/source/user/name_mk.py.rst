@@ -9,6 +9,7 @@ The file name must end with **_mk.py**.
 
 .. image:: ../img/sample_app_mk.jpg
   :width: 300
+  :alt: sample_app
 
 **app_mk.py** sample:
 

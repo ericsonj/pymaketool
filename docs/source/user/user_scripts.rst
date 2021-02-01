@@ -7,6 +7,7 @@ The developer can add more python scripts and import into _mk.py files.
 
 .. image:: ../img/user_scripts.jpg
   :width: 300
+  :alt: user_script
 
 For example in **func.py**:
 

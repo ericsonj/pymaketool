@@ -21,7 +21,9 @@ Release v\ |version|. (:ref:`Installation <install>`)
 
 ----------------
 
-**Behold, the power of pymaketool**::
+**Behold, the power of pymaketool**
+
+.. code-block:: python
 
    # app_mk.py
    from pymaketool.Module import ModuleHandle
@@ -37,6 +39,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
 
 .. image:: img/pymaketool.jpg
   :width: 400
+  :alt: pymaketool
 
 ----------------
 
@@ -44,6 +47,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
 
 .. image:: img/project.jpg
   :width: 700
+  :alt: project
 
 
 .. toctree::
@@ -53,6 +57,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
    user/makefile.py
    user/name_mk.py
    user/user_scripts
+   user/addons
 
 .. Indices and tables
 .. ==================

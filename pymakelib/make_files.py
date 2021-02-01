@@ -137,7 +137,9 @@ FILE_MAKEFILE_PY = """import os
 from os.path import basename
 from pymakelib import git
 from pymakelib import MKVARS
+from pymakelib.Addon import Addon
 
+Addon(EclipseAddon)
 
 def getProjectSettings():
     return {
