@@ -68,7 +68,8 @@ def readModule(modPath, compilerOpts, goals=None):
 
     try:
         result = getattr(mod, K.MOD_F_GETSRCS)(modHandle)
-        addToList(srcs, result)
+        if result:
+            addToList(srcs, result)
     except:
         pass
 

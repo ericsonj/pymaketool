@@ -52,7 +52,7 @@ from pymakelib import Addon
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
 parser.add_argument('--init', type=str, help='initialize project', const=os.path.basename(os.getcwd()), dest='project_name', nargs='?')
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.12')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.13')
 args = parser.parse_args()
 
 goal = args.goal
@@ -168,8 +168,9 @@ for mod in modules:
     srcsfile.write('\n')
 
     for inc in mod.incs:
-        srcsfile.write("INCS += -I{}\n".format(inc))
-        includes.append(inc)
+        if inc:
+            srcsfile.write("INCS += -I{}\n".format(inc))
+            includes.append(inc)
 
     srcsfile.write('\n')
 
