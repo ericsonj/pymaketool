@@ -206,7 +206,24 @@ def read_Makefilepy():
 
     try:
         compSet = wprGetCompilerSet()
-        for sfx in (K.COMPILERSET_CC, K.COMPILERSET_CXX, K.COMPILERSET_LD, K.COMPILERSET_AR, K.COMPILERSET_AS, K.COMPILERSET_OBJCOPY, K.COMPILERSET_SIZE, K.COMPILERSET_OBJDUMP):
+        for sfx in (
+            K.COMPILERSET_CC,
+            K.COMPILERSET_CXX,
+            K.COMPILERSET_LD, 
+            K.COMPILERSET_AR, 
+            K.COMPILERSET_AS, 
+            K.COMPILERSET_OBJCOPY, 
+            K.COMPILERSET_SIZE, 
+            K.COMPILERSET_OBJDUMP,
+            K.COMPILERSET_NM,
+            K.COMPILERSET_RANLIB,
+            K.COMPILERSET_STRINGS,
+            K.COMPILERSET_STRIP,
+            K.COMPILERSET_CXXFILT,
+            K.COMPILERSET_ADDR2LINE,
+            K.COMPILERSET_READELF,
+            K.COMPILERSET_ELFEDIT
+            ):
             if compSet[sfx]:
                 makevars.write('{0:<10} := {1}\n'.format(sfx, compSet[sfx]))
     except:
