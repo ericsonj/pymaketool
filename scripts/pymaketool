@@ -168,8 +168,9 @@ for mod in modules:
     srcsfile.write('\n')
 
     for inc in mod.incs:
-        srcsfile.write("INCS += -I{}\n".format(inc))
-        includes.append(inc)
+        if inc:
+            srcsfile.write("INCS += -I{}\n".format(inc))
+            includes.append(inc)
 
     srcsfile.write('\n')
 

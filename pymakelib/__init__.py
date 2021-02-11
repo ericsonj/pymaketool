@@ -26,6 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from abc import ABC,abstractmethod
 
 class MKVARS():
     LD      = "$(LD)"
@@ -53,3 +54,44 @@ class D:
         return str(self.getDefine())
     def __repr__(self):
        return str(self.getDefine())
+
+class ProjectImp(ABC):
+    @abstractmethod
+    def getProjectSettings(self, **kwargs) -> dict:
+        pass
+    
+    @abstractmethod
+    def getTargetsScript(self, **kwargs) -> dict:
+        pass
+
+    @abstractmethod
+    def getCompilerSet(self, **kwargs) -> dict:
+        pass
+
+    @abstractmethod
+    def getCompilerOpts(self, **kwargs) -> dict:
+        pass
+
+    @abstractmethod
+    def getLinkerOpts(self, **kwargs) -> dict:
+        pass
+
+# global ProjectInstance
+
+def Makeclass(clazz):
+    obj = clazz()
+    if not isinstance(obj, ProjectImp):
+        print("Makeclass not found")
+    global ProjectInstance
+    ProjectInstance = clazz()
+
+
+def getProjectInstance() -> ProjectImp:
+    try:
+        _ = ProjectInstance
+        return ProjectInstance
+    except NameError:
+        #TODO: Debug level
+        pass
+    return None
+    

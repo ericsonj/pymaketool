@@ -34,6 +34,7 @@ from .Module import ModuleHandle
 from .Module import CompilerOptions
 from .Module import Module
 from .Module import StaticLibrary
+from . import getProjectInstance
 
 def addToList(dstList: list, values):
     if isinstance(values, list):
@@ -68,7 +69,8 @@ def readModule(modPath, compilerOpts, goals=None):
 
     try:
         result = getattr(mod, K.MOD_F_GETSRCS)(modHandle)
-        addToList(srcs, result)
+        if result:
+            addToList(srcs, result)
     except:
         pass
 
@@ -149,6 +151,38 @@ def read_Makefilepy():
     mod = importlib.util.module_from_spec(lib)
     lib.loader.exec_module(mod)
 
+    projectInstance = getProjectInstance()
+
+    def wprGetProjectSettings():
+        if projectInstance:
+            return projectInstance.getProjectSettings()
+        else:
+            return getattr(mod, K.MK_F_GETPROJECTSETTINGS)()
+
+    def wprGetCompilerSet():
+        if projectInstance:
+            return projectInstance.getCompilerSet()
+        else:
+            return getattr(mod, K.MK_F_GETCOMPILERSET)()
+
+    def wprGetCompileOpts():
+        if projectInstance:
+            return projectInstance.getCompilerOpts()
+        else:
+            return getattr(mod, K.MK_F_GETCOMPILEROPTS)()
+
+    def wprGetLinkerOpts():
+        if projectInstance:
+            return projectInstance.getLinkerOpts()
+        else:
+            return getattr(mod, K.MK_F_GETLINKEROPTS)()
+
+    def wprGetTargetScript():
+        if projectInstance:
+            return projectInstance.getTargetsScript()
+        else:
+            return getattr(mod, K.MK_F_GETTARGETSSCRIPT)()      
+
     makevars = open(K.VARS_MK, 'w')
 
     projSettings = None
@@ -156,7 +190,7 @@ def read_Makefilepy():
     compOpts = None
 
     try:
-        projSettings = getattr(mod, K.MK_F_GETPROJECTSETTINGS)()
+        projSettings = wprGetProjectSettings()
         if projSettings[K.PROJSETT_PROJECTNAME]:
             makevars.write('{0:<15} = {1}\n'.format(
                 'PROJECT', projSettings[K.PROJSETT_PROJECTNAME]))
@@ -171,7 +205,7 @@ def read_Makefilepy():
     makevars.write('\n')
 
     try:
-        compSet = getattr(mod, K.MK_F_GETCOMPILERSET)()
+        compSet = wprGetCompilerSet()
         for sfx in (K.COMPILERSET_CC, K.COMPILERSET_CXX, K.COMPILERSET_LD, K.COMPILERSET_AR, K.COMPILERSET_AS, K.COMPILERSET_OBJCOPY, K.COMPILERSET_SIZE, K.COMPILERSET_OBJDUMP):
             if compSet[sfx]:
                 makevars.write('{0:<10} := {1}\n'.format(sfx, compSet[sfx]))
@@ -181,7 +215,7 @@ def read_Makefilepy():
     makevars.write('\n')
 
     try:
-        compOpts = getattr(mod, K.MK_F_GETCOMPILEROPTS)()
+        compOpts = wprGetCompileOpts()
         if isinstance(compOpts, dict):
             for key in compOpts:
                 makevars.write('# {0}\n'.format(key))
@@ -202,7 +236,7 @@ def read_Makefilepy():
     makevars.write('\n')
 
     try:
-        linkOpts = getattr(mod, K.MK_F_GETLINKEROPTS)()
+        linkOpts = wprGetLinkerOpts()
         if isinstance(linkOpts, dict):
             for keys in linkOpts:
                 makevars.write('# {0}\n'.format(keys))
@@ -219,7 +253,7 @@ def read_Makefilepy():
     targetsmk = open('targets.mk', 'w')
 
     try:
-        targets = getattr(mod, K.MK_F_GETTARGETSSCRIPT)()
+        targets = wprGetTargetScript()
         if isinstance(targets, dict):
             if len(targets) == 0:
                 pass
