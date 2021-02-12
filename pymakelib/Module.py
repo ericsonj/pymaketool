@@ -30,6 +30,10 @@ import hashlib
 from pathlib import Path
 from . import preconts as K
 from . import git
+from abc import ABC,abstractmethod
+from . import Log
+
+log = Log.getLogger()
 
 class SrcType:
     C = ['.c']
@@ -79,6 +83,12 @@ class Module:
         self.filename = filename
         self.staticLib = staticLib
     
+    def isEmpty(self):
+        if not self.srcs and not self.incs and not self.staticLib:
+            return True
+        else:
+            return False
+
     def getDirs(self):
         dirs = []
         for src in self.srcs:
@@ -224,3 +234,46 @@ class ModuleHandle:
 
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)
+
+class ModuleImp(ABC):
+    
+    # def init(self, mh: ModuleHandle):
+    #     pass
+
+    @abstractmethod
+    def getSrcs(self, mh: ModuleHandle) -> list:
+        pass
+    
+    @abstractmethod
+    def getIncs(self, mh: ModuleHandle) -> list:
+        pass
+
+    # def getCompilerOpts(self, mh: ModuleHandle):
+    #     return mh.getGeneralCompilerOpts()
+    
+
+def ModuleClass(clazz):
+    obj = clazz()
+    if not isinstance(obj, ModuleImp):
+        log.warning(f"Class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.ModuleImp")
+    global ModulesInstances
+    ModulesInstances = obj
+
+
+def getModuleInstance() -> ModuleImp:
+    try:
+        _ = ModulesInstances
+        return ModulesInstances
+    except NameError:
+        log.debug("Not ModuleClass in project")
+        pass
+    return None
+
+
+def cleanModuleInstance():
+    try:
+        global ModulesInstances
+        ModulesInstances = None
+    except:
+        log.debug("Not ModulesInstances in project")
+        pass

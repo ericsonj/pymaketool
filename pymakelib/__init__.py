@@ -26,7 +26,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+import inspect
 from abc import ABC,abstractmethod
+from .Log import getLogger
+
+log = getLogger(__name__)
 
 class MKVARS():
     LD      = "$(LD)"
@@ -84,14 +89,12 @@ class ProjectImp(ABC):
     def getLinkerOpts(self, **kwargs) -> dict:
         pass
 
-# global ProjectInstance
-
 def Makeclass(clazz):
     obj = clazz()
     if not isinstance(obj, ProjectImp):
-        print("Makeclass not found")
+        log.warning(f"Class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.ProjectImp")
     global ProjectInstance
-    ProjectInstance = clazz()
+    ProjectInstance = obj
 
 
 def getProjectInstance() -> ProjectImp:
@@ -99,7 +102,7 @@ def getProjectInstance() -> ProjectImp:
         _ = ProjectInstance
         return ProjectInstance
     except NameError:
-        #TODO: Debug level
+        log.debug("Not Makeclass mode")
         pass
     return None
-    
+

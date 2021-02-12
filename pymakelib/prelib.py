@@ -1,10 +1,10 @@
 # Copyright (c) 2020, Ericson Joseph
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
 #     * Neither the name of pyMakeTool nor the names of its contributors
 #       may be used to endorse or promote products derived from this software
 #       without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,12 +32,11 @@ from . import preconts as K
 from . import D
 from .Module import ModuleHandle
 from .Module import CompilerOptions
-from .Module import Module
+from .Module import Module, getModuleInstance, cleanModuleInstance
 from .Module import StaticLibrary
 from . import getProjectInstance
-import logging
+from . import log
 
-log = logging.getLogger(__name__)
 
 def addToList(dstList: list, values):
     if isinstance(values, list):
@@ -54,43 +53,96 @@ def addToList(dstList: list, values):
 def readModule(modPath, compilerOpts, goals=None):
     lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
     mod = importlib.util.module_from_spec(lib)
+    log.debug(f"Exec module {mod.__name__}")
     lib.loader.exec_module(mod)
-    
+
     modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
-    
+
     srcs = []
     incs = []
     flags = []
     staticLib = None
 
-    try:
-        result = getattr(mod, K.MOD_F_INIT)(modHandle)
-        if isinstance(result, StaticLibrary):
-            staticLib = result
-    except:
-        pass
+    moduleInstance = getModuleInstance()
+    if moduleInstance:
+        log.info(f"module {mod.__name__} have ModuleClass define")
 
-    try:
-        result = getattr(mod, K.MOD_F_GETSRCS)(modHandle)
-        if result:
-            addToList(srcs, result)
-    except:
-        pass
+    def wprInit():
+        try:
+            if moduleInstance:
+                return moduleInstance.init(modHandle)
+            else:
+                return getattr(mod, K.MOD_F_INIT)(modHandle)
+        except AttributeError as ae:
+            log.debug(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
-    try:
-        result = getattr(mod, K.MOD_F_GETINCS)(modHandle)
+    def wprGetSrcs():
+        try:
+            if moduleInstance:
+                return moduleInstance.getSrcs(modHandle)
+            else:
+                return getattr(mod, K.MOD_F_GETSRCS)(modHandle)
+        except AttributeError as ae:
+            log.warning(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+
+    def wprGetIncs():
+        try:
+            if moduleInstance:
+                return moduleInstance.getIncs(modHandle)
+            else:
+                return getattr(mod, K.MOD_F_GETINCS)(modHandle)
+        except AttributeError as ae:
+            log.warning(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+
+    def wprGetCompilerOpts():
+        try:
+            if moduleInstance:
+                return moduleInstance.getCompilerOpts(modHandle)
+            else:
+                return getattr(mod, K.MOD_F_GETCOMPILEROPTS)(modHandle)
+        except AttributeError as ae:
+            log.debug(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+
+    # init attribute is not mandatory
+    result = wprInit()
+    if isinstance(result, StaticLibrary):
+        log.debug(f"module \'{mod.__name__}\' is static library")
+        staticLib = result
+
+    result = wprGetSrcs()
+    if result:
+        addToList(srcs, result)
+    else:
+        log.debug(f"module \'{mod.__name__}\' return empty sources")
+
+    result = wprGetIncs()
+    if result:
         addToList(incs, result)
-    except:
-        pass
+    else:
+        log.debug(f"module \'{mod.__name__}\' return empty includes")
 
-    try:
-        if hasattr(mod, K.MOD_F_GETCOMPILEROPTS):
-            result = getattr(mod, K.MOD_F_GETCOMPILEROPTS)(modHandle)
-            if issubclass(type(result), CompilerOptions):
-                result = result.opts
-            flags.append(result)
-    except Exception as e:
-        print(e)
+    result = wprGetCompilerOpts()
+    if issubclass(type(result), CompilerOptions):
+        result = result.opts
+    if result:
+        flags.append(result)
+    else:
+        log.debug(
+            f"module \'{mod.__name__}\' return empty compiler options")
+
+    cleanModuleInstance()
 
     return Module(srcs, incs, flags, modPath, staticLib=staticLib)
 
@@ -145,7 +197,7 @@ def compilerOptsByModuleToLine(compOpts):
         elif isinstance(moduleCompileOps, list):
             for item in moduleCompileOps:
                 mstr.append(item)
-
+    print(str(mstr))
     return ' '.join(mstr)
 
 
@@ -156,12 +208,12 @@ def read_Makefilepy():
 
     projectInstance = getProjectInstance()
     if projectInstance:
-        print("Makeclass define")
+        log.info("Makeclass define")
 
     def wprGetProjectSettings():
         try:
             if projectInstance:
-                    return projectInstance.getProjectSettings()
+                return projectInstance.getProjectSettings()
             else:
                 return getattr(mod, K.MK_F_GETPROJECTSETTINGS)()
         except Exception as ex:
@@ -203,7 +255,7 @@ def read_Makefilepy():
             if projectInstance:
                 return projectInstance.getTargetsScript()
             else:
-                return getattr(mod, K.MK_F_GETTARGETSSCRIPT)()      
+                return getattr(mod, K.MK_F_GETTARGETSSCRIPT)()
         except Exception as ex:
             log.exception(ex)
             exit(-1)
@@ -234,11 +286,11 @@ def read_Makefilepy():
         for sfx in (
             K.COMPILERSET_CC,
             K.COMPILERSET_CXX,
-            K.COMPILERSET_LD, 
-            K.COMPILERSET_AR, 
-            K.COMPILERSET_AS, 
-            K.COMPILERSET_OBJCOPY, 
-            K.COMPILERSET_SIZE, 
+            K.COMPILERSET_LD,
+            K.COMPILERSET_AR,
+            K.COMPILERSET_AS,
+            K.COMPILERSET_OBJCOPY,
+            K.COMPILERSET_SIZE,
             K.COMPILERSET_OBJDUMP,
             K.COMPILERSET_NM,
             K.COMPILERSET_RANLIB,
@@ -248,11 +300,11 @@ def read_Makefilepy():
             K.COMPILERSET_ADDR2LINE,
             K.COMPILERSET_READELF,
             K.COMPILERSET_ELFEDIT
-            ):
+        ):
             if compSet[sfx]:
                 makevars.write('{0:<10} := {1}\n'.format(sfx, compSet[sfx]))
     except Exception as e:
-        log.debug(e)
+        log.exception(e)
 
     makevars.write('\n')
 
@@ -271,7 +323,7 @@ def read_Makefilepy():
             for item in compOpts:
                 makevars.write('COMPILER_FLAGS += {}\n'.format(item))
         else:
-            log.debug("Not load getCompilerOpts")   
+            log.debug("Not load getCompilerOpts")
     except Exception as ex:
         log.exception(ex)
 
@@ -288,7 +340,7 @@ def read_Makefilepy():
             for item in linkOpts:
                 makevars.write('LDFLAGS += {}\n'.format(item))
     except Exception as ex:
-        log.debug(ex)
+        log.exception(ex)
 
     makevars.close()
 
