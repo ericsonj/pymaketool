@@ -191,7 +191,7 @@ for mod in modules:
                     projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
 
     srcsfile.write('\n')
-
+ 
     if mod.staticLib:
         mkkey = mod.staticLib.name.upper()
         srcsfile.write('{0}_OBJECTS = $({0}_CSRC:%.c=$({0}_OUTPUT)/%.o) $({0}_CSRC:%.s=$({0}_OUTPUT)/%.o)\n'.format(mkkey))

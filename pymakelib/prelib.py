@@ -35,6 +35,9 @@ from .Module import CompilerOptions
 from .Module import Module
 from .Module import StaticLibrary
 from . import getProjectInstance
+import logging
+
+log = logging.getLogger(__name__)
 
 def addToList(dstList: list, values):
     if isinstance(values, list):
@@ -152,36 +155,58 @@ def read_Makefilepy():
     lib.loader.exec_module(mod)
 
     projectInstance = getProjectInstance()
+    if projectInstance:
+        print("Makeclass define")
 
     def wprGetProjectSettings():
-        if projectInstance:
-            return projectInstance.getProjectSettings()
-        else:
-            return getattr(mod, K.MK_F_GETPROJECTSETTINGS)()
+        try:
+            if projectInstance:
+                    return projectInstance.getProjectSettings()
+            else:
+                return getattr(mod, K.MK_F_GETPROJECTSETTINGS)()
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
     def wprGetCompilerSet():
-        if projectInstance:
-            return projectInstance.getCompilerSet()
-        else:
-            return getattr(mod, K.MK_F_GETCOMPILERSET)()
+        try:
+            if projectInstance:
+                return projectInstance.getCompilerSet()
+            else:
+                return getattr(mod, K.MK_F_GETCOMPILERSET)()
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
     def wprGetCompileOpts():
-        if projectInstance:
-            return projectInstance.getCompilerOpts()
-        else:
-            return getattr(mod, K.MK_F_GETCOMPILEROPTS)()
+        try:
+            if projectInstance:
+                return projectInstance.getCompilerOpts()
+            else:
+                return getattr(mod, K.MK_F_GETCOMPILEROPTS)()
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
     def wprGetLinkerOpts():
-        if projectInstance:
-            return projectInstance.getLinkerOpts()
-        else:
-            return getattr(mod, K.MK_F_GETLINKEROPTS)()
+        try:
+            if projectInstance:
+                return projectInstance.getLinkerOpts()
+            else:
+                return getattr(mod, K.MK_F_GETLINKEROPTS)()
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
     def wprGetTargetScript():
-        if projectInstance:
-            return projectInstance.getTargetsScript()
-        else:
-            return getattr(mod, K.MK_F_GETTARGETSSCRIPT)()      
+        try:
+            if projectInstance:
+                return projectInstance.getTargetsScript()
+            else:
+                return getattr(mod, K.MK_F_GETTARGETSSCRIPT)()      
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
     makevars = open(K.VARS_MK, 'w')
 
@@ -200,7 +225,7 @@ def read_Makefilepy():
             makevars.write('{0:<15} = {1}\n'.format(
                 'PROJECT_OUT', projSettings[K.PROJSETT_FOLDEROUT]))
     except Exception as e:
-        print(e)
+        log.exception(e)
 
     makevars.write('\n')
 
@@ -226,8 +251,8 @@ def read_Makefilepy():
             ):
             if compSet[sfx]:
                 makevars.write('{0:<10} := {1}\n'.format(sfx, compSet[sfx]))
-    except:
-        pass
+    except Exception as e:
+        log.debug(e)
 
     makevars.write('\n')
 
@@ -246,9 +271,9 @@ def read_Makefilepy():
             for item in compOpts:
                 makevars.write('COMPILER_FLAGS += {}\n'.format(item))
         else:
-            print("Not load getCompilerOpts")   
-    except:
-        pass
+            log.debug("Not load getCompilerOpts")   
+    except Exception as ex:
+        log.exception(ex)
 
     makevars.write('\n')
 
@@ -262,8 +287,8 @@ def read_Makefilepy():
         elif isinstance(linkOpts, list):
             for item in linkOpts:
                 makevars.write('LDFLAGS += {}\n'.format(item))
-    except:
-        pass
+    except Exception as ex:
+        log.debug(ex)
 
     makevars.close()
 
@@ -317,7 +342,7 @@ def read_Makefilepy():
                 if compOpts:
                     compOpts['TARGETS'] = targets
     except Exception as e:
-        print(e)
+        log.exception(e)
 
     targetsmk.close()
 
