@@ -53,7 +53,7 @@ def addToList(dstList: list, values):
 def readModule(modPath, compilerOpts, goals=None):
     lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
     mod = importlib.util.module_from_spec(lib)
-    log.debug(f"Exec module {mod.__name__}")
+    log.debug(f"exec module {mod.__name__}")
     lib.loader.exec_module(mod)
 
     modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
@@ -188,6 +188,8 @@ def compilerOptsByModuleToLine(compOpts):
     for moduleCompileOps in compOpts:
         if isinstance(moduleCompileOps, dict):
             for key in moduleCompileOps:
+                if key == 'TARGETS':
+                    continue
                 if (key == K.COMPOPTS_MACROS_KEY and isinstance(moduleCompileOps[key], dict)):
                     macros = macrosDictToString(moduleCompileOps[key])
                     mstr.append(macros)
@@ -197,8 +199,11 @@ def compilerOptsByModuleToLine(compOpts):
         elif isinstance(moduleCompileOps, list):
             for item in moduleCompileOps:
                 mstr.append(item)
-    print(str(mstr))
-    return ' '.join(mstr)
+    rmstr = list(filter(lambda item: item, mstr))
+    rmstr = ' '.join(rmstr)
+    rmstr = ' '.join(rmstr.split())
+    log.debug(f"compiler options: {rmstr}")
+    return rmstr
 
 
 def read_Makefilepy():

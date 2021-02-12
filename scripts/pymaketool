@@ -114,6 +114,7 @@ sys.path.append(str(os.getcwd()))
 
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
 
+
 ignoreModuleList = moduleignore.readIgnoreFile()
 
 modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
@@ -133,18 +134,21 @@ srcsfile = open('srcs.mk', 'w')
 
 includes = []
 
-log.info('**Process modules**')
+log.debug('**process modules**')
 for mod in modules:
     if mod.isEmpty():
         log.debug(f"module \'{mod.filename}\' is empty, module skiped*")
         continue
 
     print('Module: {}'.format(mod.filename))
+    log.info('read module \'{}\''.format(mod.filename))
     srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
     srcsfile.write("#{0:^50}#\n".format(str(mod.filename)))
     srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
 
     if mod.staticLib:
+        log.debug(f"module \'{mod.filename}\' static library name {mod.staticLib.name}")
+        log.debug(f"module \'{mod.filename}\' static output directory {mod.staticLib.outputDir}")
         mkkey = mod.staticLib.name.upper()
         srcsfile.write('{}_NAME = {}\n'.format(mkkey, mod.staticLib.name))
         srcsfile.write('{}_OUTPUT = {}\n'.format(mkkey, str(mod.staticLib.outputDir)))
