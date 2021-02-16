@@ -92,7 +92,7 @@ class ProjectImp(ABC):
 def Makeclass(clazz):
     obj = clazz()
     if not isinstance(obj, ProjectImp):
-        log.warning(f"Class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.ProjectImp")
+        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.ProjectImp")
     global ProjectInstance
     ProjectInstance = obj
 
@@ -102,7 +102,7 @@ def getProjectInstance() -> ProjectImp:
         _ = ProjectInstance
         return ProjectInstance
     except NameError:
-        log.debug("Not Makeclass mode")
+        log.debug("not Makeclass mode")
         pass
     return None
 

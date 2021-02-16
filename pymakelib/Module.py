@@ -235,7 +235,7 @@ class ModuleHandle:
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)
 
-class ModuleImp(ABC):
+class AbstractModule(ABC):
     
     # def init(self, mh: ModuleHandle):
     #     pass
@@ -254,18 +254,26 @@ class ModuleImp(ABC):
 
 def ModuleClass(clazz):
     obj = clazz()
-    if not isinstance(obj, ModuleImp):
-        log.warning(f"Class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.ModuleImp")
+    if not isinstance(obj, AbstractModule):
+        log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
+    
     global ModulesInstances
-    ModulesInstances = obj
+    try:
+        _ = ModulesInstances
+    except NameError:
+        log.debug(f"create global modules list")
+        ModulesInstances = []
+
+    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\'")
+    ModulesInstances.append(obj)
 
 
-def getModuleInstance() -> ModuleImp:
+def getModuleInstance() -> AbstractModule:
     try:
         _ = ModulesInstances
         return ModulesInstances
     except NameError:
-        log.debug("Not ModuleClass in project")
+        log.debug("not ModuleClass in project")
         pass
     return None
 
@@ -273,7 +281,9 @@ def getModuleInstance() -> ModuleImp:
 def cleanModuleInstance():
     try:
         global ModulesInstances
-        ModulesInstances = None
-    except:
-        log.debug("Not ModulesInstances in project")
+        log.debug(f"clean instances of \'{type(ModulesInstances).__name__}\'")
+        ModulesInstances = []
+    except Exception as ex:
+        log.exception(ex)
+        log.debug("not ModulesInstances in project")
         pass

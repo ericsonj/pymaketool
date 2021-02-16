@@ -121,7 +121,7 @@ modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
 # Load modules
 for filename in modulesPaths:
     mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal)
-    modules.append(mod)
+    modules.extend(mod)
 
 for ex in ignoreModuleList:
     for i, o in enumerate(modules):
@@ -134,7 +134,7 @@ srcsfile = open('srcs.mk', 'w')
 
 includes = []
 
-log.debug('**process modules**')
+log.debug('**load modules**')
 for mod in modules:
     if mod.isEmpty():
         log.debug(f"module \'{mod.filename}\' is empty, module skiped*")

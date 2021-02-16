@@ -49,6 +49,54 @@ def addToList(dstList: list, values):
     else:
         dstList.append(values)
 
+def wprInit(mod, modHandle, moduleInstance=None):
+    try:
+        if moduleInstance:
+            return moduleInstance.init(modHandle)
+        else:
+            return getattr(mod, K.MOD_F_INIT)(modHandle)
+    except AttributeError as ae:
+        log.debug(ae)
+    except Exception as ex:
+        log.exception(ex)
+        exit(-1)
+
+def wprGetSrcs(mod, modHandle, moduleInstance=None):
+    try:
+        if moduleInstance:
+            return moduleInstance.getSrcs(modHandle)
+        else:
+            return getattr(mod, K.MOD_F_GETSRCS)(modHandle)
+    except AttributeError as ae:
+        log.warning(ae)
+    except Exception as ex:
+        log.exception(ex)
+        exit(-1)
+
+def wprGetIncs(mod, modHandle, moduleInstance=None):
+    try:
+        if moduleInstance:
+            return moduleInstance.getIncs(modHandle)
+        else:
+            return getattr(mod, K.MOD_F_GETINCS)(modHandle)
+    except AttributeError as ae:
+        log.warning(ae)
+    except Exception as ex:
+        log.exception(ex)
+        exit(-1)
+
+def wprGetCompilerOpts(mod, modHandle, moduleInstance=None):
+    try:
+        if moduleInstance:
+            return moduleInstance.getCompilerOpts(modHandle)
+        else:
+            return getattr(mod, K.MOD_F_GETCOMPILEROPTS)(modHandle)
+    except AttributeError as ae:
+        log.debug(ae)
+    except Exception as ex:
+        log.exception(ex)
+        exit(-1)
+
 
 def readModule(modPath, compilerOpts, goals=None):
     lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
@@ -56,96 +104,89 @@ def readModule(modPath, compilerOpts, goals=None):
     log.debug(f"exec module {mod.__name__}")
     lib.loader.exec_module(mod)
 
-    modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
+    moduleInstances = getModuleInstance()
+    modules = []
 
-    srcs = []
-    incs = []
-    flags = []
-    staticLib = None
+    if not moduleInstances:
+        modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
+        srcs = []
+        incs = []
+        flags = []
+        staticLib = None
+        # init attribute is not mandatory
+        result = wprInit(mod, modHandle)
+        if isinstance(result, StaticLibrary):
+            log.debug(f"\'{mod.__name__}\' is static library")
+            staticLib = result
 
-    moduleInstance = getModuleInstance()
-    if moduleInstance:
-        log.info(f"module {mod.__name__} have ModuleClass define")
+        result = wprGetSrcs(mod, modHandle)
+        if result:
+            addToList(srcs, result)
+        else:
+            log.debug(f"\'{mod.__name__}\' return empty sources")
 
-    def wprInit():
-        try:
-            if moduleInstance:
-                return moduleInstance.init(modHandle)
-            else:
-                return getattr(mod, K.MOD_F_INIT)(modHandle)
-        except AttributeError as ae:
-            log.debug(ae)
-        except Exception as ex:
-            log.exception(ex)
-            exit(-1)
+        result = wprGetIncs(mod, modHandle)
+        if result:
+            addToList(incs, result)
+        else:
+            log.debug(f"\'{mod.__name__}\' return empty includes")
 
-    def wprGetSrcs():
-        try:
-            if moduleInstance:
-                return moduleInstance.getSrcs(modHandle)
-            else:
-                return getattr(mod, K.MOD_F_GETSRCS)(modHandle)
-        except AttributeError as ae:
-            log.warning(ae)
-        except Exception as ex:
-            log.exception(ex)
-            exit(-1)
+        result = wprGetCompilerOpts(mod, modHandle)
+        if issubclass(type(result), CompilerOptions):
+            result = result.opts
+        if result:
+            flags.append(result)
+        else:
+            log.debug(
+                f"\'{mod.__name__}\' return empty compiler options")
 
-    def wprGetIncs():
-        try:
-            if moduleInstance:
-                return moduleInstance.getIncs(modHandle)
-            else:
-                return getattr(mod, K.MOD_F_GETINCS)(modHandle)
-        except AttributeError as ae:
-            log.warning(ae)
-        except Exception as ex:
-            log.exception(ex)
-            exit(-1)
+        modules.append(Module(srcs, incs, flags, modPath, staticLib=staticLib))
+        return modules
 
-    def wprGetCompilerOpts():
-        try:
-            if moduleInstance:
-                return moduleInstance.getCompilerOpts(modHandle)
-            else:
-                return getattr(mod, K.MOD_F_GETCOMPILEROPTS)(modHandle)
-        except AttributeError as ae:
-            log.debug(ae)
-        except Exception as ex:
-            log.exception(ex)
-            exit(-1)
+    for moduleInstance in moduleInstances:
 
-    # init attribute is not mandatory
-    result = wprInit()
-    if isinstance(result, StaticLibrary):
-        log.debug(f"module \'{mod.__name__}\' is static library")
-        staticLib = result
+        modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
 
-    result = wprGetSrcs()
-    if result:
-        addToList(srcs, result)
-    else:
-        log.debug(f"module \'{mod.__name__}\' return empty sources")
+        srcs = []
+        incs = []
+        flags = []
+        staticLib = None
 
-    result = wprGetIncs()
-    if result:
-        addToList(incs, result)
-    else:
-        log.debug(f"module \'{mod.__name__}\' return empty includes")
+        if moduleInstance:
+            log.info(f"read ModuleClass \'{mod.__name__}:{type(moduleInstance).__name__}\'")
 
-    result = wprGetCompilerOpts()
-    if issubclass(type(result), CompilerOptions):
-        result = result.opts
-    if result:
-        flags.append(result)
-    else:
-        log.debug(
-            f"module \'{mod.__name__}\' return empty compiler options")
+        # init attribute is not mandatory
+        result = wprInit(mod, modHandle, moduleInstance)
+        if isinstance(result, StaticLibrary):
+            log.debug(f"\'{type(moduleInstance).__name__}\' is static library")
+            staticLib = result
+
+        result = wprGetSrcs(mod, modHandle, moduleInstance)
+        if result:
+            addToList(srcs, result)
+        else:
+            log.debug(f"\'{type(moduleInstance).__name__}\' return empty sources")
+
+        result = wprGetIncs(mod, modHandle, moduleInstance)
+        if result:
+            addToList(incs, result)
+        else:
+            log.debug(f"\'{type(moduleInstance).__name__}\' return empty includes")
+
+        result = wprGetCompilerOpts(mod, modHandle, moduleInstance)
+        if issubclass(type(result), CompilerOptions):
+            result = result.opts
+        if result:
+            flags.append(result)
+        else:
+            log.debug(
+                f"\'{type(moduleInstance).__name__}\' return empty compiler options")
+
+        modules.append(Module(srcs, incs, flags, modPath, staticLib=staticLib))
 
     cleanModuleInstance()
 
-    return Module(srcs, incs, flags, modPath, staticLib=staticLib)
-
+    return modules
 
 def getLineSeparator(key: str, num: int):
     header = ''
@@ -213,7 +254,7 @@ def read_Makefilepy():
 
     projectInstance = getProjectInstance()
     if projectInstance:
-        log.info("Makeclass define")
+        log.info("makeclass define")
 
     def wprGetProjectSettings():
         try:
