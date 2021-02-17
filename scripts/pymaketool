@@ -47,7 +47,7 @@ from pymakelib import moduleignore
 from pymakelib import eclipse_files
 from pymakelib import make_files
 from pymakelib import Addon
-
+from pymakelib import log
 
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
@@ -65,12 +65,12 @@ if args.project_name:
     try:
         os.mkdir(K.PYMAKEPROJ)
     except:
-        pass
+        log.exception(e)
 
     try:
         os.mkdir(K.ECLIPSE_SETTING)
     except Exception as e:
-        print(e)
+        log.exception(e)
 
     fileset = [
         [K.PYMAKEPROJ + '/.cproject_template',eclipse_files.FILE_CPROJECT_TEMP],
@@ -86,7 +86,7 @@ if args.project_name:
             fileout.write(f[1])
             fileout.close()
         except Exception as e:
-            print(e)
+            log.exception(e)
 
     sys.exit()
 
@@ -114,13 +114,14 @@ sys.path.append(str(os.getcwd()))
 
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
 
+
 ignoreModuleList = moduleignore.readIgnoreFile()
 
 modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
 # Load modules
 for filename in modulesPaths:
     mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal)
-    modules.append(mod)
+    modules.extend(mod)
 
 for ex in ignoreModuleList:
     for i, o in enumerate(modules):
@@ -133,13 +134,21 @@ srcsfile = open('srcs.mk', 'w')
 
 includes = []
 
+log.debug('**load modules**')
 for mod in modules:
+    if mod.isEmpty():
+        log.debug(f"module \'{mod.filename}\' is empty, module skiped*")
+        continue
+
     print('Module: {}'.format(mod.filename))
+    log.info('read module \'{}\''.format(mod.filename))
     srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
     srcsfile.write("#{0:^50}#\n".format(str(mod.filename)))
     srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
 
     if mod.staticLib:
+        log.debug(f"module \'{mod.filename}\' static library name {mod.staticLib.name}")
+        log.debug(f"module \'{mod.filename}\' static output directory {mod.staticLib.outputDir}")
         mkkey = mod.staticLib.name.upper()
         srcsfile.write('{}_NAME = {}\n'.format(mkkey, mod.staticLib.name))
         srcsfile.write('{}_OUTPUT = {}\n'.format(mkkey, str(mod.staticLib.outputDir)))
@@ -191,7 +200,7 @@ for mod in modules:
                     projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
 
     srcsfile.write('\n')
-
+ 
     if mod.staticLib:
         mkkey = mod.staticLib.name.upper()
         srcsfile.write('{0}_OBJECTS = $({0}_CSRC:%.c=$({0}_OUTPUT)/%.o) $({0}_CSRC:%.s=$({0}_OUTPUT)/%.o)\n'.format(mkkey))
@@ -275,11 +284,15 @@ cproject_setting = {
     'C_EXCLUDE': listToExclude
 }
 
-# Execute init function of plugins
-for initFunc in Addon.initAddonFuncs:
-    initFunc(cproject_setting, compilerSettings)
+try:
+    # Execute init function of plugins
+    for initFunc in Addon.initAddonFuncs:
+            initFunc(cproject_setting, compilerSettings)
 
-# Execute class of plugins
-for obj in Addon.initAddonClass:
-    p = obj(cproject_setting, compilerSettings)
-    p.init()
+    # Execute class of plugins
+    for obj in Addon.initAddonClass:
+        p = obj(cproject_setting, compilerSettings)
+        p.init()
+except Exception as ex:
+    log.exception(ex)
+    exit(-1)

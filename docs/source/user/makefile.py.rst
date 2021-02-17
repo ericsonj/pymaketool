@@ -269,3 +269,30 @@ Example of Makefile to build firmware for STM32F4 microcontroller:
                 '-u_printf_float'
             ]
         }
+
+Makeclass
+---------
+
+**Makefile.py** in class mode:
+
+.. code-block:: python
+    
+    from pymakelib import IProject, Makeclass
+
+    @Makeclass
+    class Project(IProject):
+
+        def getProjectSettings(self, **kwargs):
+            ...
+
+        def getTargetsScript(self, **kwargs):
+            ...
+
+        def getCompilerSet(self, **kwargs):
+            ...
+
+        def getCompilerOpts(self, **kwargs):
+            ...
+        
+        def getLinkerOpts(self, **kwargs):
+            ...

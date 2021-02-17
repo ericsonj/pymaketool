@@ -26,6 +26,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+import inspect
+from abc import ABC,abstractmethod
+from .Log import getLogger
+
+log = getLogger(__name__)
 
 class MKVARS():
     LD      = "$(LD)"
@@ -61,3 +67,42 @@ class D:
         return str(self.getDefine())
     def __repr__(self):
        return str(self.getDefine())
+
+class IProject(ABC):
+    @abstractmethod
+    def getProjectSettings(self, **kwargs) -> dict:
+        pass
+    
+    @abstractmethod
+    def getTargetsScript(self, **kwargs) -> dict:
+        pass
+
+    @abstractmethod
+    def getCompilerSet(self, **kwargs) -> dict:
+        pass
+
+    @abstractmethod
+    def getCompilerOpts(self, **kwargs) -> dict:
+        pass
+
+    @abstractmethod
+    def getLinkerOpts(self, **kwargs) -> dict:
+        pass
+
+def Makeclass(clazz):
+    obj = clazz()
+    if not isinstance(obj, IProject):
+        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.IProject")
+    global ProjectInstance
+    ProjectInstance = obj
+
+
+def getProjectInstance() -> IProject:
+    try:
+        _ = ProjectInstance
+        return ProjectInstance
+    except NameError:
+        log.debug("not Makeclass mode")
+        pass
+    return None
+

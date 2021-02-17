@@ -34,6 +34,21 @@ Release v\ |version|. (:ref:`Installation <install>`)
    def getIncs(m: ModuleHandle):
       return m.getAllIncsC()
 
+Or in class mode:
+
+.. code-block:: python
+
+   # app_mk.py
+   from pymakelib.Module import AbstractModule, ModuleClass, ModuleHandle
+
+   @ModuleClass
+   class Lib(AbstractModule):
+      def getSrcs(self, m: ModuleHandle):
+         return m.getAllSrcsC()
+
+      def getIncs(self, m: ModuleHandle):
+         return m.getAllIncsC()
+
 **pymaketool** allow to you create C projects with anything structure extremely easily.
 Use Eclipse IDE for open and edit your project, pymaketool generates the necessary files for this.
 
@@ -58,6 +73,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
    user/name_mk.py
    user/user_scripts
    user/addons
+   user/logger
 
 .. Indices and tables
 .. ==================
