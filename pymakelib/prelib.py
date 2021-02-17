@@ -349,6 +349,8 @@ def read_Makefilepy():
         ):
             if compSet[sfx]:
                 makevars.write('{0:<10} := {1}\n'.format(sfx, compSet[sfx]))
+    except KeyError as ke:
+        log.debug(f"not found compiler option {ke}")
     except Exception as e:
         log.exception(e)
 
