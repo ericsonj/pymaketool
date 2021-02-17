@@ -6,7 +6,7 @@ def getGCCHeaderFiles(cmd_gcc):
     gcc_includes = []
     try:
         auxfile = tempfile.NamedTemporaryFile()
-        command = "echo | {0} -Wp,-v -x c++ - -fsyntax-only &> {1} ; cat {1} |  grep '^[ ]*/usr.*'".format(
+        command = "echo | {0} -Wp,-v -x c++ - -fsyntax-only &> {1} ; cat {1} |  grep -e '^\s.*'".format(
             cmd_gcc, auxfile.name)
         res = subprocess.check_output(["bash", "-c", command])
         for line in res.splitlines():
