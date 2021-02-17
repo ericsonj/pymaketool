@@ -68,7 +68,7 @@ class D:
     def __repr__(self):
        return str(self.getDefine())
 
-class ProjectImp(ABC):
+class IProject(ABC):
     @abstractmethod
     def getProjectSettings(self, **kwargs) -> dict:
         pass
@@ -91,13 +91,13 @@ class ProjectImp(ABC):
 
 def Makeclass(clazz):
     obj = clazz()
-    if not isinstance(obj, ProjectImp):
-        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.ProjectImp")
+    if not isinstance(obj, IProject):
+        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.IProject")
     global ProjectInstance
     ProjectInstance = obj
 
 
-def getProjectInstance() -> ProjectImp:
+def getProjectInstance() -> IProject:
     try:
         _ = ProjectInstance
         return ProjectInstance
