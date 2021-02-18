@@ -28,6 +28,7 @@
 
 import hashlib
 from pathlib import Path
+from typing import Match
 from . import preconts as K
 from . import git
 from abc import ABC,abstractmethod
@@ -237,8 +238,12 @@ class ModuleHandle:
 
 class AbstractModule(ABC):
     
-    # def init(self, mh: ModuleHandle):
-    #     pass
+    def __init__(self, path) -> None:
+        super().__init__()
+        self.path = path
+
+    def init(self, mh: ModuleHandle):
+        pass 
 
     @abstractmethod
     def getSrcs(self, mh: ModuleHandle) -> list:
@@ -250,13 +255,24 @@ class AbstractModule(ABC):
 
     # def getCompilerOpts(self, mh: ModuleHandle):
     #     return mh.getGeneralCompilerOpts()
-    
+
+import re
+
 
 def ModuleClass(clazz):
-    obj = clazz()
-    if not isinstance(obj, AbstractModule):
+    if issubclass(clazz, AbstractModule):
+        log.debug(f"class \'{clazz.__name__}\' is inheritance of Module.AbstractModule")
+    else:
         log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
-    
+
+    classdir = str(clazz)
+    m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
+    modulePath = None
+    if m:
+        p = Path(m.group('dir'))
+        modulePath = p.parent
+
+    obj = clazz(modulePath)
     global ModulesInstances
     try:
         _ = ModulesInstances
@@ -265,6 +281,11 @@ def ModuleClass(clazz):
         ModulesInstances = []
 
     log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\'")
+    classdir = str(clazz)
+    m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
+    if m:
+        p = Path(m.group('dir'))
+        print(p.parent)
     ModulesInstances.append(obj)
 
 
