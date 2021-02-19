@@ -280,12 +280,8 @@ def ModuleClass(clazz):
         log.debug(f"create global modules list")
         ModulesInstances = []
 
-    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\'")
-    classdir = str(clazz)
-    m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
-    if m:
-        p = Path(m.group('dir'))
-        print(p.parent)
+    
+    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {modulePath}")
     ModulesInstances.append(obj)
 
 
@@ -302,7 +298,7 @@ def getModuleInstance() -> AbstractModule:
 def cleanModuleInstance():
     try:
         global ModulesInstances
-        log.debug(f"clean instances of \'{type(ModulesInstances).__name__}\'")
+        log.debug(f"clean global modules list")
         ModulesInstances = []
     except Exception as ex:
         log.exception(ex)
