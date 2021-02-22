@@ -27,12 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import hashlib
+import re
+import importlib.util
+import copy
 from pathlib import Path
-from typing import Match
 from . import preconts as K
 from . import git
 from abc import ABC,abstractmethod
 from . import Log
+
 
 log = Log.getLogger()
 
@@ -243,7 +246,7 @@ class AbstractModule(ABC):
         self.path = path
 
     def init(self, mh: ModuleHandle):
-        pass 
+        pass
 
     @abstractmethod
     def getSrcs(self, mh: ModuleHandle) -> list:
@@ -252,11 +255,94 @@ class AbstractModule(ABC):
     @abstractmethod
     def getIncs(self, mh: ModuleHandle) -> list:
         pass
+    
+    
+    def findSrcs(self, src_type: SrcType) -> list:
+        log.debug(f"find srcs in {self.path}")
+        srcs = []
+        for ext in src_type:
+            srcs += list(Path(self.path).rglob('*' + ext))
+        return srcs
+        
+    def findIncs(self, inc_type: IncType) -> list:
+        incsfiles = []
+        for ext in inc_type:
+            incsfiles += list(Path(self.path).rglob('*' + ext))
 
-    # def getCompilerOpts(self, mh: ModuleHandle):
-    #     return mh.getGeneralCompilerOpts()
+        incs = []
+        for i in incsfiles:
+            incs.append(i.parent)
 
-import re
+        incs = list(dict.fromkeys(incs))
+        return incs
+
+    def getCompilerOpts(self, mh: ModuleHandle):
+        pass
+
+class ExternalModule(AbstractModule):
+    
+    def __init__(self, path):
+        """
+        Init external module, call getModulePath and execute the remote module
+        """
+        super().__init__(path)
+        try:
+            modPath = self.getModulePath()
+            if not modPath.endswith("_mk.py"):
+                raise AttributeError(f"{modPath} is not a valid module path")
+            lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
+            mod = importlib.util.module_from_spec(lib)
+            lib.loader.exec_module(mod)
+            obj = getModuleInstance()[0]
+            log.debug(f"create copy of module object {obj.__class__}")
+            self.remoteModule = copy.deepcopy(obj)
+            cleanModuleInstance()
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+    
+    @abstractmethod
+    def getModulePath(self)->str:
+        """
+        Return path string of external module
+        """
+        pass
+
+    def init(self, mh:ModuleHandle):
+        """
+        call and return init from remoteModule 
+        """
+        try:
+            return self.remoteModule.init(mh)
+        except AttributeError as ae:
+            log.debug(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+
+    def getSrcs(self, mh:ModuleHandle):
+        """
+        call and return getSrcs from remoteModule
+        """
+        return self.remoteModule.getSrcs(mh)
+        
+    def getIncs(self, mh:ModuleHandle):
+        """
+        call and return getIncs from remoteModule
+        """
+        return self.remoteModule.getIncs(mh)
+    
+    def getCompilerOpts(self, mh:ModuleHandle):
+        """
+        call and return getCompilerOpts from remoteModule
+        """
+        try:
+            return self.remoteModule.getCompilerOpts(mh)
+        except AttributeError as ae:
+            log.debug(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
 
 
 def ModuleClass(clazz):

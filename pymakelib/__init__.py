@@ -54,8 +54,11 @@ class MKVARS():
 def MOD_PATH(wk):
     return wk['modPath']
 
-# Direct define  __USE_FILE__: D(file.h) => -D__USE_FILE__=file.h
+
 class D:
+    """
+    Direct define: { '__USE_FILE__': D(file.h) } => -D__USE_FILE__=file.h
+    """
     def __init__(self, value):
         self.value = value
     def getDefine(self):
@@ -66,7 +69,8 @@ class D:
     def __str__(self):
         return str(self.getDefine())
     def __repr__(self):
-       return str(self.getDefine())
+        return str(self.getDefine())
+
 
 class IProject(ABC):
     @abstractmethod
@@ -88,6 +92,7 @@ class IProject(ABC):
     @abstractmethod
     def getLinkerOpts(self, **kwargs) -> dict:
         pass
+
 
 def Makeclass(clazz):
     obj = clazz()

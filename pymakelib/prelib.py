@@ -37,7 +37,6 @@ from .Module import StaticLibrary
 from . import getProjectInstance
 from . import log
 
-
 def addToList(dstList: list, values):
     if isinstance(values, list):
         for item in values:
