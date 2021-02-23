@@ -30,13 +30,8 @@
 
 
 from pathlib import Path
-import importlib.util
-import inspect
 import sys
 import os
-import time
-import subprocess
-import json
 import re
 import copy
 import argparse
@@ -64,7 +59,7 @@ if args.project_name:
     fproject.close()
     try:
         os.mkdir(K.PYMAKEPROJ)
-    except:
+    except Exception as e:
         log.exception(e)
 
     try:

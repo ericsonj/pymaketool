@@ -246,8 +246,9 @@ def compilerOptsByModuleToLine(compOpts):
     return rmstr
 
 
-def read_Makefilepy():
-    lib = importlib.util.spec_from_file_location(K.MAKEFILE_PY, K.MAKEFILE_PY)
+def read_Makefilepy(workpath=''):
+    makefilepy_path = workpath + K.MAKEFILE_PY
+    lib = importlib.util.spec_from_file_location(makefilepy_path, makefilepy_path)
     mod = importlib.util.module_from_spec(lib)
     lib.loader.exec_module(mod)
 

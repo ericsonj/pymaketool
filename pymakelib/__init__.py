@@ -111,3 +111,28 @@ def getProjectInstance() -> IProject:
         pass
     return None
 
+## More OOP for pymaketool
+
+from pathlib import Path
+import copy
+from . import prelib as plib
+import sys
+
+class Pymaketool():
+
+    def __init__(self, workpath='./'):
+        self.workpath = workpath
+        sys.path.append(str(self.workpath))
+        self.projSettings, self.compilerOpts, self.compilerSettings = plib.read_Makefilepy(self.workpath)
+
+
+    def getModulesPaths(self) -> list:
+        return list(Path(self.workpath).rglob('*[.|_]mk.py'))
+
+
+    def readModules(self, modulesPaths) -> list:
+        self.modules = []
+        for filename in modulesPaths:
+            mod = plib.readModule(filename, copy.deepcopy(self.compilerOpts), None)
+            self.modules.extend(mod)
+        return self.modules
