@@ -28,10 +28,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import tempfile
+import subprocess
 from pymakelib import Pymaketool
 from pymakelib import prelib as plib
 
 p = Pymaketool()
+
+print(p.getModulesPaths())
 
 modules = p.readModules(p.getModulesPaths())
 
@@ -55,24 +59,38 @@ for m in modules:
 # print(f"./cinclude2dot --include={includes} --src={srcs}")
 ## Use gcc -H -D__TEST_DEFINE__=1 -I/PROJECTS/PYTHON/test_module_lib/module_lib/inc -Ilib/inc app/application/main.c
 
-gccCmd = []
-
+gccCmd = ['echo', '|']
 gccCmd.append(p.compilerSettings['CC'])
 gccCmd.append('-H')
 gccCmd.append(plib.macrosDictToString(p.compilerOpts['MACROS']))
 for inc in allincs:
     gccCmd.append(f"-I{inc}")
 
-# print(gccCmd)
-
-import subprocess
+gccCmd.append('-o')
+tmpout = tempfile.NamedTemporaryFile()
+gccCmd.append(tmpout.name)
+gccCmd.append('-c')
+gccCmd.append('&>')
+tmpfile = tempfile.NamedTemporaryFile()
+gccCmd.append(tmpfile.name)
+gccCmd.append(';')
+gccCmd.append('cat')
+gccCmd.append(tmpfile.name)
+gccCmd.append('|')
+gccCmd.append('grep')
+gccCmd.append('-e')
+gccCmd.append("'^. '")
 
 for src in allsrcs:
-    gccCmd.append(src)
-    print(gccCmd)
+    print(src)
+    gccCmd.insert(12, src)
+    stcmd = ' '.join(gccCmd)
     try:
-        out = subprocess.check_output(gccCmd)
-        print(out)
-    except:
-        pass
-    gccCmd.pop()
+        out = subprocess.check_output(['bash', '-c', stcmd])
+        for line in out.splitlines():
+            line = line.decode('utf-8')
+            line = line[2:]
+            print(f"\t{line}")
+    except Exception as e:
+        print(e)
+    gccCmd.pop(12)
