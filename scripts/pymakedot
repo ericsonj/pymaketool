@@ -29,29 +29,50 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from pymakelib import Pymaketool
-from pymakelib.Module import Module
+from pymakelib import prelib as plib
 
 p = Pymaketool()
 
 modules = p.readModules(p.getModulesPaths())
 
-
 lincs = ''
 allincs = []
-allincs.extend(p.compilerSettings['INCLUDES'])
+# allincs.extend(p.compilerSettings['INCLUDES'])
 
 allsrcs = []
 
 for m in modules:
     incs = [str(i) for i in m.incs]
     allincs.extend(incs)
-    srcs = [str(s.parent) for s in m.srcs]
+    srcs = [str(s) for s in m.srcs]
     allsrcs.extend(srcs)
     
-allsrcs = list(dict.fromkeys(allsrcs))
+# allsrcs = list(dict.fromkeys(allsrcs))
 
-includes = ','.join(allincs)
-srcs = ','.join(allsrcs)
+# includes = ','.join(allincs)
+# srcs = ','.join(allsrcs)
 
-print(f"./cinclude2dot --include={includes} --src={srcs}")
+# print(f"./cinclude2dot --include={includes} --src={srcs}")
 ## Use gcc -H -D__TEST_DEFINE__=1 -I/PROJECTS/PYTHON/test_module_lib/module_lib/inc -Ilib/inc app/application/main.c
+
+gccCmd = []
+
+gccCmd.append(p.compilerSettings['CC'])
+gccCmd.append('-H')
+gccCmd.append(plib.macrosDictToString(p.compilerOpts['MACROS']))
+for inc in allincs:
+    gccCmd.append(f"-I{inc}")
+
+# print(gccCmd)
+
+import subprocess
+
+for src in allsrcs:
+    gccCmd.append(src)
+    print(gccCmd)
+    try:
+        out = subprocess.check_output(gccCmd)
+        print(out)
+    except:
+        pass
+    gccCmd.pop()
