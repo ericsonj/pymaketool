@@ -28,10 +28,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from logging import setLoggerClass
+from pathlib import Path
+import json
 import tempfile
 import subprocess
 from pymakelib import Pymaketool
 from pymakelib import prelib as plib
+import sys
 
 p = Pymaketool()
 
@@ -48,8 +52,11 @@ allsrcs = []
 for m in modules:
     incs = [str(i) for i in m.incs]
     allincs.extend(incs)
-    srcs = [str(s) for s in m.srcs]
-    allsrcs.extend(srcs)
+    print(m.filename)
+    if str(m.filename) in sys.argv:
+        print("add src")
+        srcs = [str(s) for s in m.srcs]
+        allsrcs.extend(srcs)
     
 # allsrcs = list(dict.fromkeys(allsrcs))
 
@@ -65,7 +72,6 @@ gccCmd.append('-H')
 gccCmd.append(plib.macrosDictToString(p.compilerOpts['MACROS']))
 for inc in allincs:
     gccCmd.append(f"-I{inc}")
-
 gccCmd.append('-o')
 tmpout = tempfile.NamedTemporaryFile()
 gccCmd.append(tmpout.name)
@@ -81,16 +87,97 @@ gccCmd.append('grep')
 gccCmd.append('-e')
 gccCmd.append("'^. '")
 
+class Node:
+    def __init__(self, pathsrc:str, modulespaths):
+        self.pathsrc = Path(pathsrc)
+        self.name = self.pathsrc.name
+        self.group = None
+        self.modulespaths = modulespaths
+        for modpath in modulespaths:
+            if Path(modpath.parent) in self.pathsrc.parents:
+                self.group = modpath.parent.name
+                break
+        if not self.group:
+            self.group = self.pathsrc.parent
+            if str(self.group).endswith('src') or  str(self.group).endswith('inc'):
+                self.group = self.group.parent
+        self.incs = None
+        if pathsrc.endswith('.c'):
+            self.incs = self.getIncludes(pathsrc)
+
+    def getIncludes(self, src):
+        incs = []
+        gccCmd.insert(12, src)
+        stcmd = ' '.join(gccCmd)
+        try:
+            out = subprocess.check_output(['bash', '-c', stcmd])
+            for line in out.splitlines():
+                line = line.decode('utf-8')
+                line = line[2:]
+                incs.append(Node(f"{line}", self.modulespaths))
+        except Exception as e:
+            print(e)
+        gccCmd.pop(12)
+        return incs
+
+    def getKey(self):
+        return self.name.replace('.', '_')
+
+    def __repr__(self) -> str:
+        return f"pathsrc: {self.pathsrc}, name: {self.name}, group: {self.group}, incs: {self.incs}"
+
+print("digraph module {")
+
+nodes = {}
+groups = {}
+
 for src in allsrcs:
-    print(src)
-    gccCmd.insert(12, src)
-    stcmd = ' '.join(gccCmd)
-    try:
-        out = subprocess.check_output(['bash', '-c', stcmd])
-        for line in out.splitlines():
-            line = line.decode('utf-8')
-            line = line[2:]
-            print(f"\t{line}")
-    except Exception as e:
-        print(e)
-    gccCmd.pop(12)
+    n = Node(src, p.getModulesPaths())
+    if not n.name in nodes:
+        nodes[n.name] = n
+    if not n.group in groups:
+        groups[n.group] = [n]
+    else:
+        groups[n.group].append(n)
+    for i in n.incs:
+        if not i.name in nodes:
+            nodes[i.name] = i
+        if not i.group in groups:
+            groups[i.group] = [i]
+        else:
+            groups[i.group].append(i)
+        if not i.group == n.group: 
+            print(f"    {n.getKey()} -> {i.getKey()};")
+
+
+print('\n')
+idx = 0
+for g in groups:
+    print(f"    subgraph cluster_{idx} "+"{")
+    idx += 1
+    nds = groups[g]
+    for n in nds:
+        if n.incs:
+            aloneingroup = True
+            for i in n.incs:
+                if i.group == g:
+                    aloneingroup = False
+                    print(f"        {n.getKey()} -> {i.getKey()};")
+            if aloneingroup:
+                print(f"        {n.getKey()};")
+        else:
+            print(f"        {n.getKey()};")
+    print(f"        label = \"{g}\";")
+    print(f"        color = blue;")
+    print("    }")
+
+print('\n')
+for n in nodes:
+    n = nodes[n]
+    print(f"    {n.getKey()} [shape=box label=\"{n.name}\"];")
+
+print("}")
+
+# for g in groups:
+#     print('\n')
+#     print(groups[g])
