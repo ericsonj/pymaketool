@@ -138,6 +138,7 @@ from os.path import basename
 from pymakelib import git
 from pymakelib import MKVARS
 from pymakelib.Addon import Addon
+from pymakelib.eclipse_addon import EclipseAddon
 
 Addon(EclipseAddon)
 
