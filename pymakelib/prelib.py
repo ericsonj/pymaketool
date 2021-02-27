@@ -26,6 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
 from pathlib import Path
 import importlib.util
 from . import preconts as K
@@ -95,6 +96,19 @@ def wprGetCompilerOpts(mod, modHandle, moduleInstance=None):
     except Exception as ex:
         log.exception(ex)
         exit(-1)
+
+def reafGenHeader(headerpath):
+    lib = importlib.util.spec_from_file_location(str(headerpath), str(headerpath))
+    mod = importlib.util.module_from_spec(lib)
+    log.debug(f"exec code generator {mod.__name__}")
+    outfile = str(headerpath)
+    outfile = outfile.replace('_h.py', '.h')
+    outfile = outfile.replace('.h.py', '.h')
+    log.debug(f"output fiel {outfile}")
+    stdout_ = sys.stdout #Keep track of the previous value.
+    sys.stdout = open(outfile, 'w') # Something here that provides a write method.
+    lib.loader.exec_module(mod)
+    sys.stdout = stdout_
 
 
 def readModule(modPath, compilerOpts, goals=None):

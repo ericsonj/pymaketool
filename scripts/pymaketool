@@ -43,6 +43,7 @@ from pymakelib import eclipse_files
 from pymakelib import make_files
 from pymakelib import Addon
 from pymakelib import log
+from pymakelib import Project
 
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
@@ -109,6 +110,13 @@ sys.path.append(str(os.getcwd()))
 
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
 
+globalSettings = {
+    'PROJECT_SETTINGS': projSettings,
+    'COMPILER_OTPS':    compilerOpts,
+    'COMPILER_SETTINGS': compilerSettings
+}
+
+Project.setSettings(globalSettings)
 
 ignoreModuleList = moduleignore.readIgnoreFile()
 
@@ -123,6 +131,13 @@ for ex in ignoreModuleList:
         if o.filename == ex:
             del modules[i]
             break
+
+#Execute GenHeaders
+headersPaths = list(Path('./').rglob('*[.|_]h.py'))
+for gheader in headersPaths:
+    fileout = re.sub('[.|_]h.py', '.h', str(gheader))
+    print(f"Generator: {gheader} > {fileout}")
+    plib.reafGenHeader(gheader)
 
 # Write CSRC
 srcsfile = open('srcs.mk', 'w')
