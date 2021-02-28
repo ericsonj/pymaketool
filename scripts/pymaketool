@@ -35,7 +35,6 @@ import os
 import re
 import copy
 import argparse
-from pymakelib import eclipse_cproject as cp
 from pymakelib import preconts as K
 from pymakelib import prelib as plib
 from pymakelib import moduleignore
@@ -181,8 +180,8 @@ for mod in modules:
     srcsfile.write('\n')
 
     if not mod.staticLib:
-        for dir in mod.getDirs():
-            srcsfile.write("SRC_DIRS += {}\n".format(str(dir)))
+        for d in mod.getDirs():
+            srcsfile.write("SRC_DIRS += {}\n".format(str(d)))
 
     srcsfile.write('\n')
 

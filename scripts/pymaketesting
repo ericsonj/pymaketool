@@ -32,7 +32,6 @@
 import sys
 import re
 from pathlib import Path
-import os
 import shutil
 
 ceedlingPath = Path('Test/ceedling')
