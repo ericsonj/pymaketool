@@ -1,7 +1,10 @@
+from pymakelib import D
 from . import Project
 
 def out(value):
-    print(value)
+    lines = value.splitlines()
+    for l in lines:
+        print(l)
 
 def comment(value: str):
     lines = value.splitlines()
@@ -16,7 +19,7 @@ def defined(key):
     if key in macros:
        return macros[key] 
 
-def enum(names, values):
+def enum(names, values=[0]):
     resp = ''
     resp += "enum {\n"
     idx = 0
@@ -25,8 +28,9 @@ def enum(names, values):
         try:
             v = values[idx]
         except:
+            v = None
             pass
-        if v:
+        if isinstance(v, int):
             resp += f"    {n} = {v},\n"
         else:
             resp += f"    {n},\n"
@@ -41,15 +45,26 @@ def enum_sf(strformat, range, init=0):
         values.append(strformat.format(r))
     enum(values, [init])
 
-
-def cstrarray(name, values):
-    resp = ''
-    resp += f"const char* {name}[{len(values)}] = "+"{\n"
-    for v in values:
-        resp += f"    \"{v}\",\n"
-    resp += "};"
-    out(resp)
-
+def enum_str_map(name, strdict: dict):
+    keys = list(strdict.keys())
+    enum(keys)
+    out("""#define {0}_VALUES  =\\
+    {{\\
+{1}\\
+    }}
+    """.format(name.upper(),'\\\n'.join([ f"{' ':8}\"{strdict[n]}\"," for n in keys])))
+    out("""
+#ifndef DECL_{0}
+#define _DECL extern
+#define _VAR
+#else
+#define _DECL
+#define _VAR  {0}_VALUES
+#endif
+    """.format(name.upper()))
+    out("""
+_DECL char* {0}[{1}] _VAR;
+    """.format(name, len(keys)))
 
 def __format_name(name:str) -> str:
     name = name.upper()
