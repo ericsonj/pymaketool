@@ -2,7 +2,7 @@ import logging
 from logging import Logger, NOTSET
 import os
 
-FORMATTER = logging.Formatter("%(levelname)s: %(message)s")
+FORMATTER = logging.Formatter("%(levelname)-8s%(filename)s:%(lineno)d  %(message)s")
 
 def getLogger(name='Log'):
     log = Logger.manager.getLogger(name)

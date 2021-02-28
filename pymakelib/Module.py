@@ -27,11 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import hashlib
+import re
+import importlib.util
+import copy
 from pathlib import Path
 from . import preconts as K
 from . import git
 from abc import ABC,abstractmethod
 from . import Log
+
 
 log = Log.getLogger()
 
@@ -237,8 +241,12 @@ class ModuleHandle:
 
 class AbstractModule(ABC):
     
-    # def init(self, mh: ModuleHandle):
-    #     pass
+    def __init__(self, path) -> None:
+        super().__init__()
+        self.path = path
+
+    def init(self, mh: ModuleHandle):
+        pass
 
     @abstractmethod
     def getSrcs(self, mh: ModuleHandle) -> list:
@@ -247,16 +255,110 @@ class AbstractModule(ABC):
     @abstractmethod
     def getIncs(self, mh: ModuleHandle) -> list:
         pass
-
-    # def getCompilerOpts(self, mh: ModuleHandle):
-    #     return mh.getGeneralCompilerOpts()
     
+    
+    def findSrcs(self, src_type: SrcType) -> list:
+        log.debug(f"find srcs in {self.path}")
+        srcs = []
+        for ext in src_type:
+            srcs += list(Path(self.path).rglob('*' + ext))
+        return srcs
+        
+    def findIncs(self, inc_type: IncType) -> list:
+        incsfiles = []
+        for ext in inc_type:
+            incsfiles += list(Path(self.path).rglob('*' + ext))
+
+        incs = []
+        for i in incsfiles:
+            incs.append(i.parent)
+
+        incs = list(dict.fromkeys(incs))
+        return incs
+
+    def getCompilerOpts(self, mh: ModuleHandle):
+        pass
+
+class ExternalModule(AbstractModule):
+    
+    def __init__(self, path):
+        """
+        Init external module, call getModulePath and execute the remote module
+        """
+        super().__init__(path)
+        try:
+            modPath = self.getModulePath()
+            if not modPath.endswith("_mk.py"):
+                raise AttributeError(f"{modPath} is not a valid module path")
+            lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
+            mod = importlib.util.module_from_spec(lib)
+            lib.loader.exec_module(mod)
+            obj = getModuleInstance()[0]
+            log.debug(f"create copy of module object {obj.__class__}")
+            self.remoteModule = copy.deepcopy(obj)
+            cleanModuleInstance()
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+    
+    @abstractmethod
+    def getModulePath(self)->str:
+        """
+        Return path string of external module
+        """
+        pass
+
+    def init(self, mh:ModuleHandle):
+        """
+        call and return init from remoteModule 
+        """
+        try:
+            return self.remoteModule.init(mh)
+        except AttributeError as ae:
+            log.debug(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+
+    def getSrcs(self, mh:ModuleHandle):
+        """
+        call and return getSrcs from remoteModule
+        """
+        return self.remoteModule.getSrcs(mh)
+        
+    def getIncs(self, mh:ModuleHandle):
+        """
+        call and return getIncs from remoteModule
+        """
+        return self.remoteModule.getIncs(mh)
+    
+    def getCompilerOpts(self, mh:ModuleHandle):
+        """
+        call and return getCompilerOpts from remoteModule
+        """
+        try:
+            return self.remoteModule.getCompilerOpts(mh)
+        except AttributeError as ae:
+            log.debug(ae)
+        except Exception as ex:
+            log.exception(ex)
+            exit(-1)
+
 
 def ModuleClass(clazz):
-    obj = clazz()
-    if not isinstance(obj, AbstractModule):
+    if issubclass(clazz, AbstractModule):
+        log.debug(f"class \'{clazz.__name__}\' is inheritance of Module.AbstractModule")
+    else:
         log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
-    
+
+    classdir = str(clazz)
+    m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
+    modulePath = None
+    if m:
+        p = Path(m.group('dir'))
+        modulePath = p.parent
+
+    obj = clazz(modulePath)
     global ModulesInstances
     try:
         _ = ModulesInstances
@@ -264,7 +366,8 @@ def ModuleClass(clazz):
         log.debug(f"create global modules list")
         ModulesInstances = []
 
-    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\'")
+    
+    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {modulePath}")
     ModulesInstances.append(obj)
 
 
@@ -281,7 +384,7 @@ def getModuleInstance() -> AbstractModule:
 def cleanModuleInstance():
     try:
         global ModulesInstances
-        log.debug(f"clean instances of \'{type(ModulesInstances).__name__}\'")
+        log.debug(f"clean global modules list")
         ModulesInstances = []
     except Exception as ex:
         log.exception(ex)

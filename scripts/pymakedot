@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2021, Ericson Joseph
+# 
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+# 
+#     * Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright notice,
+#       this list of conditions and the following disclaimer in the documentation
+#       and/or other materials provided with the distribution.
+#     * Neither the name of pyMakeTool nor the names of its contributors
+#       may be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from pathlib import Path
+import tempfile
+import subprocess
+from pymakelib import Pymaketool
+from pymakelib import prelib as plib
+import sys
+
+class Node:
+    def __init__(self, srcpath, modulepath, dicincs:dict):
+        self.srcpath = Path(srcpath)
+        self.name = self.srcpath.name
+        if modulepath:
+            self.modulepath = Path(modulepath)
+            self.module_name = self.modulepath.name
+            self.module_parent_name = self.modulepath.parent.name
+        else:
+            self.modulepath = None
+            self.module_name = None
+            self.module_parent_name = None
+        self.incs = self.__getIncludes(srcpath, dicincs)
+
+    def __getIncludes(self, src, dictinc: dict):
+        src = str(src)
+        if not src.endswith('.c'):
+            return None
+        CC = p.compilerSettings['CC']
+        MACROS = plib.macrosDictToString(p.compilerOpts['MACROS'])
+        INCS = ''
+        for inc in dictinc:
+            INCS += (f" -I{inc} ")
+        tmpout = tempfile.NamedTemporaryFile().name
+        
+        tmpfile = tempfile.NamedTemporaryFile().name
+
+        cmd = f"{CC} -H {MACROS} {INCS} -o {tmpout} -c {src} &> {tmpfile} ; cat {tmpfile} | grep -e '^. '"
+        incres = []
+        try:
+            out = subprocess.check_output(['bash', '-c', cmd])
+            # proc = subprocess.Popen(['bash', '-c', cmd])
+            # out, err = proc.communicate()
+            print()
+            print("============================")
+            print(out)
+            print("============================")
+            for line in out.splitlines():
+                line:str = line.decode('utf-8')
+                if not line.startswith('. '):
+                    continue
+                line = line[2:]
+                print('> '+ str(line))
+                incpath = Path(line)
+                key = str(incpath.parent)
+                if key in dictinc:
+                    value = dictinc[key]
+                    # print(f"new n : {key} {value}")
+                    incres.append(Node(incpath, value, dictinc))
+                else:
+                    incres.append(Node(incpath, None, dictinc))
+        except Exception as e:
+            print(e)
+        return incres
+
+    def getGroup(self):
+        return self.module_name
+
+    def getKey(self):
+        return self.name.replace('.', '_')
+
+    def __repr__(self):
+        name = f"n: {self.name:15}"
+        module = ''
+        if self.module_name:
+            module = f"g: {self.module_name:15}"
+
+        return f"{name}{module}"
+
+p = Pymaketool()
+outfile = open('a.dot', 'w')
+
+# print(p.getModulesPaths())
+modpaths = [Path(i) for i in sys.argv[1:]]
+modules = p.readModules(modpaths)
+
+lincs = ''
+allincs = {}
+# allincs.extend(p.compilerSettings['INCLUDES'])
+
+allsrcs = []
+
+for m in modules:
+    incs = [str(i) for i in m.incs]
+    for i in incs:
+        # incd = {}
+        allincs[i] = m.filename
+        # allincs.append(incd)
+    srcs = [str(s) for s in m.srcs]
+    for s in srcs:
+        allsrcs.append([s, m.filename])
+    
+# print(allincs)
+
+# for s in allsrcs:
+#     n = Node(s[0], s[1], allincs)
+#     print(n)
+#     for i in n.incs:
+#         print("\t"+str(i))
+
+# allsrcs = list(dict.fromkeys(allsrcs))
+
+# includes = ','.join(allincs)
+# srcs = ','.join(allsrcs)
+
+# print(f"./cinclude2dot --include={includes} --src={srcs}")
+## Use gcc -H -D__TEST_DEFINE__=1 -I/PROJECTS/PYTHON/test_module_lib/module_lib/inc -Ilib/inc app/application/main.c
+
+
+# class Node:
+#     def __init__(self, pathsrc:str, modulespaths):
+#         self.pathsrc = Path(pathsrc)
+#         self.name = self.pathsrc.name
+#         self.group = None
+#         self.modulespaths = modulespaths
+#         for modpath in modulespaths:
+#             if Path(modpath.parent) in self.pathsrc.parents:
+#                 self.group = modpath.parent.name
+#                 break
+#         if not self.group:
+#             self.group = self.pathsrc.parent
+#             if str(self.group).endswith('src') or  str(self.group).endswith('inc'):
+#                 self.group = self.group.parent
+#         self.incs = None
+#         if pathsrc.endswith('.c'):
+#             self.incs = self.getIncludes(pathsrc)
+
+#     def getIncludes(self, src):
+#         incs = []
+#         gccCmd.insert(12, src)
+#         stcmd = ' '.join(gccCmd)
+#         try:
+#             out = subprocess.check_output(['bash', '-c', stcmd])
+#             for line in out.splitlines():
+#                 line = line.decode('utf-8')
+#                 line = line[2:]
+#                 incs.append(Node(f"{line}", self.modulespaths))
+#         except Exception as e:
+#             print(e)
+#         gccCmd.pop(12)
+#         return incs
+
+#     def getKey(self):
+#         return self.name.replace('.', '_')
+
+#     def __repr__(self) -> str:
+#         return f"pathsrc: {self.pathsrc}, name: {self.name}, group: {self.group}, incs: {self.incs}"
+
+outfile.write("digraph module {\n")
+
+nodes = {}
+groups = {}
+
+for s in allsrcs:
+    n = Node(s[0], s[1], allincs)
+    if not n.name in nodes:
+        nodes[n.name] = n
+    if not n.getGroup() in groups:
+        groups[n.getGroup()] = [n]
+    else:
+        groups[n.getGroup()].append(n)
+    if n.incs:
+        for i in n.incs:
+            if not i.name in nodes:
+                nodes[i.name] = i
+            if not i.getGroup() in groups:
+                groups[i.getGroup()] = [i]
+            else:
+                groups[i.getGroup()].append(i)
+            if not i.getGroup() == n.getGroup(): 
+                outfile.write(f"    {n.getKey()} -> {i.getKey()};\n")
+
+
+outfile.write('\n')
+idx = 0
+for g in groups:
+    if not g:
+        continue
+    outfile.write(f"    subgraph cluster_{idx} "+"{\n")
+    idx += 1
+    nds = groups[g]
+    for n in nds:
+        if n.incs:
+            aloneingroup = True
+            for i in n.incs:
+                if i.getGroup() == g:
+                    aloneingroup = False
+                    outfile.write(f"        {n.getKey()} -> {i.getKey()};\n")
+            if aloneingroup:
+                outfile.write(f"        {n.getKey()};\n")
+        # else:
+        #     print(f"        {n.getKey()};")
+    outfile.write(f"        label = \"{g}\";\n")
+    outfile.write(f"        color = blue;\n")
+    outfile.write("    }\n")
+
+outfile.write('\n')
+for n in nodes:
+    n = nodes[n]
+    outfile.write(f"    {n.getKey()} [shape=box label=\"{n.name}\"];\n")
+
+outfile.write("}\n")
+
+# for g in groups:
+#     print('\n')
+#     print(groups[g])

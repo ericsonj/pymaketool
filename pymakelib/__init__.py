@@ -54,8 +54,11 @@ class MKVARS():
 def MOD_PATH(wk):
     return wk['modPath']
 
-# Direct define  __USE_FILE__: D(file.h) => -D__USE_FILE__=file.h
+
 class D:
+    """
+    Direct define: { '__USE_FILE__': D(file.h) } => -D__USE_FILE__=file.h
+    """
     def __init__(self, value):
         self.value = value
     def getDefine(self):
@@ -66,7 +69,8 @@ class D:
     def __str__(self):
         return str(self.getDefine())
     def __repr__(self):
-       return str(self.getDefine())
+        return str(self.getDefine())
+
 
 class IProject(ABC):
     @abstractmethod
@@ -89,6 +93,7 @@ class IProject(ABC):
     def getLinkerOpts(self, **kwargs) -> dict:
         pass
 
+
 def Makeclass(clazz):
     obj = clazz()
     if not isinstance(obj, IProject):
@@ -106,3 +111,28 @@ def getProjectInstance() -> IProject:
         pass
     return None
 
+## More OOP for pymaketool
+
+from pathlib import Path
+import copy
+from . import prelib as plib
+import sys
+
+class Pymaketool():
+
+    def __init__(self, workpath='./'):
+        self.workpath = workpath
+        sys.path.append(str(self.workpath))
+        self.projSettings, self.compilerOpts, self.compilerSettings = plib.read_Makefilepy(self.workpath)
+
+
+    def getModulesPaths(self) -> list:
+        return list(Path(self.workpath).rglob('*[.|_]mk.py'))
+
+
+    def readModules(self, modulesPaths) -> list:
+        self.modules = []
+        for filename in modulesPaths:
+            mod = plib.readModule(filename, copy.deepcopy(self.compilerOpts), None)
+            self.modules.extend(mod)
+        return self.modules
