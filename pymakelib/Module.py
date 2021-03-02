@@ -36,7 +36,6 @@ from . import git
 from abc import ABC,abstractmethod
 from . import Log
 
-
 log = Log.getLogger()
 
 class SrcType:
@@ -239,23 +238,21 @@ class ModuleHandle:
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)
 
-class AbstractModule(ABC):
-    
+class AbstractModule(ABC):    
     def __init__(self, path) -> None:
         super().__init__()
         self.path = path
 
-    def init(self, mh: ModuleHandle):
+    def init(self):
         pass
 
     @abstractmethod
-    def getSrcs(self, mh: ModuleHandle) -> list:
+    def getSrcs(self) -> list:
         pass
     
     @abstractmethod
-    def getIncs(self, mh: ModuleHandle) -> list:
+    def getIncs(self) -> list:
         pass
-    
     
     def findSrcs(self, src_type: SrcType) -> list:
         log.debug(f"find srcs in {self.path}")
@@ -276,7 +273,13 @@ class AbstractModule(ABC):
         incs = list(dict.fromkeys(incs))
         return incs
 
-    def getCompilerOpts(self, mh: ModuleHandle):
+    def getAllSrcsC(self):
+        return self.findSrcs(SrcType.C)
+
+    def getAllIncsC(self):
+        return self.findIncs(IncType.C)
+
+    def getCompilerOpts(self):
         pass
 
 class ExternalModule(AbstractModule):
@@ -308,36 +311,36 @@ class ExternalModule(AbstractModule):
         """
         pass
 
-    def init(self, mh:ModuleHandle):
+    def init(self):
         """
         call and return init from remoteModule 
         """
         try:
-            return self.remoteModule.init(mh)
+            return self.remoteModule.init()
         except AttributeError as ae:
             log.debug(ae)
         except Exception as ex:
             log.exception(ex)
             exit(-1)
 
-    def getSrcs(self, mh:ModuleHandle):
+    def getSrcs(self):
         """
         call and return getSrcs from remoteModule
         """
-        return self.remoteModule.getSrcs(mh)
+        return self.remoteModule.getSrcs()
         
-    def getIncs(self, mh:ModuleHandle):
+    def getIncs(self):
         """
         call and return getIncs from remoteModule
         """
-        return self.remoteModule.getIncs(mh)
+        return self.remoteModule.getIncs()
     
-    def getCompilerOpts(self, mh:ModuleHandle):
+    def getCompilerOpts(self):
         """
         call and return getCompilerOpts from remoteModule
         """
         try:
-            return self.remoteModule.getCompilerOpts(mh)
+            return self.remoteModule.getCompilerOpts()
         except AttributeError as ae:
             log.debug(ae)
         except Exception as ex:

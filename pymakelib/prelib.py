@@ -52,7 +52,7 @@ def addToList(dstList: list, values):
 def wprInit(mod, modHandle, moduleInstance=None):
     try:
         if moduleInstance:
-            return moduleInstance.init(modHandle)
+            return moduleInstance.init()
         else:
             return getattr(mod, K.MOD_F_INIT)(modHandle)
     except AttributeError as ae:
@@ -64,7 +64,7 @@ def wprInit(mod, modHandle, moduleInstance=None):
 def wprGetSrcs(mod, modHandle, moduleInstance=None):
     try:
         if moduleInstance:
-            return moduleInstance.getSrcs(modHandle)
+            return moduleInstance.getSrcs()
         else:
             return getattr(mod, K.MOD_F_GETSRCS)(modHandle)
     except AttributeError as ae:
@@ -76,7 +76,7 @@ def wprGetSrcs(mod, modHandle, moduleInstance=None):
 def wprGetIncs(mod, modHandle, moduleInstance=None):
     try:
         if moduleInstance:
-            return moduleInstance.getIncs(modHandle)
+            return moduleInstance.getIncs()
         else:
             return getattr(mod, K.MOD_F_GETINCS)(modHandle)
     except AttributeError as ae:
@@ -88,7 +88,7 @@ def wprGetIncs(mod, modHandle, moduleInstance=None):
 def wprGetCompilerOpts(mod, modHandle, moduleInstance=None):
     try:
         if moduleInstance:
-            return moduleInstance.getCompilerOpts(modHandle)
+            return moduleInstance.getCompilerOpts()
         else:
             return getattr(mod, K.MOD_F_GETCOMPILEROPTS)(modHandle)
     except AttributeError as ae:

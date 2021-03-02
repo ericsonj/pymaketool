@@ -57,7 +57,7 @@ def MOD_PATH(wk):
 
 class D:
     """
-    Direct define: { '__USE_FILE__': D(file.h) } => -D__USE_FILE__=file.h
+    Direct define: { '__USE_FILE__': D('file.h') } => -D__USE_FILE__=file.h
     """
     def __init__(self, value):
         self.value = value

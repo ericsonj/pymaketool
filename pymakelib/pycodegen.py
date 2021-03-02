@@ -1,5 +1,4 @@
 from pymakelib import D
-from . import Project
 
 def out(value):
     lines = value.splitlines()
@@ -12,12 +11,6 @@ def comment(value: str):
     for l in lines:
         out(" * "+l.strip())
     out(" */")
-
-def defined(key):
-    sett = Project.getSettings()
-    macros = sett['COMPILER_OTPS']['MACROS']
-    if key in macros:
-       return macros[key] 
 
 def enum(names, values=[0]):
     resp = ''
