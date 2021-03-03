@@ -238,7 +238,7 @@ class ModuleHandle:
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)
 
-class AbstractModule(ABC):    
+class AbstractModule(ABC):
     def __init__(self, path) -> None:
         super().__init__()
         self.path = path
@@ -283,11 +283,18 @@ class AbstractModule(ABC):
         pass
 
 class ExternalModule(AbstractModule):
+    """The ExternalModule object that inherits from AbstractModule for include external pymaketool module 
+
+    Args:
+        path (str): path to module, _mk.py file.
+
+    Attributes:
+        remoteModule (AbstractModule): remote module object.
     
+    Raises:
+            AttributeError: path is not valid
+    """
     def __init__(self, path):
-        """
-        Init external module, call getModulePath and execute the remote module
-        """
         super().__init__(path)
         try:
             modPath = self.getModulePath()
@@ -306,14 +313,18 @@ class ExternalModule(AbstractModule):
     
     @abstractmethod
     def getModulePath(self)->str:
-        """
-        Return path string of external module
+        """Abstract methos to get string path of external module
+
+        Returns:
+            str: path of external module
         """
         pass
 
     def init(self):
-        """
-        call and return init from remoteModule 
+        """Call and return init from remote module
+
+        Returns:
+            object: may be StaticLibrary object or None
         """
         try:
             return self.remoteModule.init()
@@ -324,20 +335,26 @@ class ExternalModule(AbstractModule):
             exit(-1)
 
     def getSrcs(self):
-        """
-        call and return getSrcs from remoteModule
+        """Call and return getSrcs from remote module
+
+        Returns:
+            list: list of sources
         """
         return self.remoteModule.getSrcs()
         
     def getIncs(self):
-        """
-        call and return getIncs from remoteModule
+        """Call and return getIncs from remote module
+
+        Returns:
+            list: list of includes
         """
         return self.remoteModule.getIncs()
     
     def getCompilerOpts(self):
-        """
-        call and return getCompilerOpts from remoteModule
+        """Call and return getCompilerOpts from remote module
+
+        Returns:
+            disct: compiler options
         """
         try:
             return self.remoteModule.getCompilerOpts()
