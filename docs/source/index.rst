@@ -75,7 +75,6 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
    user/addons
    user/logger
    modules
-   pymakelib
 
 .. Indices and tables
 .. ==================

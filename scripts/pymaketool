@@ -119,6 +119,14 @@ Project.setSettings(globalSettings)
 
 ignoreModuleList = moduleignore.readIgnoreFile()
 
+#Execute GenHeaders
+headersPaths = list(Path('./').rglob('*[.|_]h.py'))
+for gheader in headersPaths:
+    fileout = re.sub('[.|_]h.py', '.h', str(gheader))
+    print(f"Generator: {gheader} > {fileout}")
+    plib.reafGenHeader(gheader)
+
+
 modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
 # Load modules
 for filename in modulesPaths:
@@ -130,13 +138,6 @@ for ex in ignoreModuleList:
         if o.filename == ex:
             del modules[i]
             break
-
-#Execute GenHeaders
-headersPaths = list(Path('./').rglob('*[.|_]h.py'))
-for gheader in headersPaths:
-    fileout = re.sub('[.|_]h.py', '.h', str(gheader))
-    print(f"Generator: {gheader} > {fileout}")
-    plib.reafGenHeader(gheader)
 
 # Write CSRC
 srcsfile = open('srcs.mk', 'w')

@@ -239,22 +239,50 @@ class ModuleHandle:
         return str(self.modDir) + " " + str(self.gCompOpts)
 
 class AbstractModule(ABC):
+    """Abstract class of pymaketool module
+
+    Args:
+        path (str): path to module, _mk.py file.
+
+    Attributes:
+        path (str): path of module
+    """    
     def __init__(self, path) -> None:
         super().__init__()
         self.path = path
 
     def init(self):
+        """Initialization of module
+        """        
         pass
 
     @abstractmethod
     def getSrcs(self) -> list:
+        """Abstract method to get the sources paths of module
+
+        Returns:
+            list: list of sources paths realtive to project
+        """        
         pass
     
     @abstractmethod
     def getIncs(self) -> list:
+        """Abstract method to get the includes paths of module
+
+        Returns:
+            list: list of includes paths realtive to project
+        """        
         pass
     
     def findSrcs(self, src_type: SrcType) -> list:
+        """Util method for find sources in module path
+
+        Args:
+            src_type (SrcType): Type of sources C, CPP or ASM
+
+        Returns:
+            list: list of sources paths realtive to project
+        """        
         log.debug(f"find srcs in {self.path}")
         srcs = []
         for ext in src_type:
@@ -262,6 +290,14 @@ class AbstractModule(ABC):
         return srcs
         
     def findIncs(self, inc_type: IncType) -> list:
+        """Util method for find includes in module path
+
+        Args:
+            inc_type (IncType): Type of includes C or CPP
+
+        Returns:
+            list: list of includes paths realtive to project
+        """        
         incsfiles = []
         for ext in inc_type:
             incsfiles += list(Path(self.path).rglob('*' + ext))
@@ -273,14 +309,52 @@ class AbstractModule(ABC):
         incs = list(dict.fromkeys(incs))
         return incs
 
-    def getAllSrcsC(self):
+    def getAllSrcsC(self) -> list:
+        """Util method for get all sources in module, type C
+
+        Returns:
+            list: list of sources paths realtive to project
+        """        
         return self.findSrcs(SrcType.C)
 
-    def getAllIncsC(self):
+    def getAllIncsC(self) -> list:
+        """Ütil method for get all includes in module, type C 
+
+        Returns:
+            list: list of includes paths realtive to project
+        """        
         return self.findIncs(IncType.C)
 
     def getCompilerOpts(self):
+        """Get special compiler options for module
+        """        
         pass
+
+
+class BasicCModule(AbstractModule):
+    """Basic C module, find all sources and includes in module path
+
+    Args:
+        path (str): path to module, _mk.py file.
+    """
+    def __init__(self, path):
+        super().__init__(path)
+
+    def getSrcs(self) -> list:
+        """Return list with all sources in module path
+
+        Returns:
+            list: sources paths
+        """        
+        return self.getAllSrcsC()
+
+    def getIncs(self) -> list:
+        """return list with all includes in module path
+
+        Returns:
+            list: includes path 
+        """        
+        return self.getAllIncsC()
 
 class ExternalModule(AbstractModule):
     """The ExternalModule object that inherits from AbstractModule for include external pymaketool module 
@@ -366,12 +440,18 @@ class ExternalModule(AbstractModule):
 
 
 def ModuleClass(clazz):
+    """Add class to modules of pymaketool
+
+    Args:
+        clazz (class): Class inheritance of Module.AbstractModule
+    """    
     if issubclass(clazz, AbstractModule):
         log.debug(f"class \'{clazz.__name__}\' is inheritance of Module.AbstractModule")
     else:
         log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
 
     classdir = str(clazz)
+    log.debug(f"class dir {classdir}")
     m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
     modulePath = None
     if m:

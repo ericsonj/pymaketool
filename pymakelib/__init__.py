@@ -72,7 +72,7 @@ class D:
         return str(self.getDefine())
 
 
-class IProject(ABC):
+class AbstractMake(ABC):
     @abstractmethod
     def getProjectSettings(self, **kwargs) -> dict:
         pass
@@ -96,13 +96,13 @@ class IProject(ABC):
 
 def Makeclass(clazz):
     obj = clazz()
-    if not isinstance(obj, IProject):
-        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.IProject")
+    if not isinstance(obj, AbstractMake):
+        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.AbstractMake")
     global ProjectInstance
     ProjectInstance = obj
 
 
-def getProjectInstance() -> IProject:
+def getProjectInstance() -> AbstractMake:
     try:
         _ = ProjectInstance
         return ProjectInstance
