@@ -42,7 +42,7 @@ from pymakelib import eclipse_files
 from pymakelib import make_files
 from pymakelib import Addon
 from pymakelib import log
-from pymakelib import Project
+from pymakelib import project
 
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
@@ -115,7 +115,7 @@ globalSettings = {
     'COMPILER_SETTINGS': compilerSettings
 }
 
-Project.setSettings(globalSettings)
+project.setSettings(globalSettings)
 
 ignoreModuleList = moduleignore.readIgnoreFile()
 
