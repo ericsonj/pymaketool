@@ -36,7 +36,6 @@ from . import git
 from abc import ABC,abstractmethod
 from . import Log
 
-
 log = Log.getLogger()
 
 class SrcType:
@@ -240,24 +239,50 @@ class ModuleHandle:
         return str(self.modDir) + " " + str(self.gCompOpts)
 
 class AbstractModule(ABC):
-    
+    """Abstract class of pymaketool module
+
+    Args:
+        path (str): path to module, _mk.py file.
+
+    Attributes:
+        path (str): path of module
+    """    
     def __init__(self, path) -> None:
         super().__init__()
         self.path = path
 
-    def init(self, mh: ModuleHandle):
+    def init(self):
+        """Initialization of module
+        """        
         pass
 
     @abstractmethod
-    def getSrcs(self, mh: ModuleHandle) -> list:
+    def getSrcs(self) -> list:
+        """Abstract method to get the sources paths of module
+
+        Returns:
+            list: list of sources paths realtive to project
+        """        
         pass
     
     @abstractmethod
-    def getIncs(self, mh: ModuleHandle) -> list:
+    def getIncs(self) -> list:
+        """Abstract method to get the includes paths of module
+
+        Returns:
+            list: list of includes paths realtive to project
+        """        
         pass
     
-    
     def findSrcs(self, src_type: SrcType) -> list:
+        """Util method for find sources in module path
+
+        Args:
+            src_type (SrcType): Type of sources C, CPP or ASM
+
+        Returns:
+            list: list of sources paths realtive to project
+        """        
         log.debug(f"find srcs in {self.path}")
         srcs = []
         for ext in src_type:
@@ -265,6 +290,14 @@ class AbstractModule(ABC):
         return srcs
         
     def findIncs(self, inc_type: IncType) -> list:
+        """Util method for find includes in module path
+
+        Args:
+            inc_type (IncType): Type of includes C or CPP
+
+        Returns:
+            list: list of includes paths realtive to project
+        """        
         incsfiles = []
         for ext in inc_type:
             incsfiles += list(Path(self.path).rglob('*' + ext))
@@ -276,15 +309,66 @@ class AbstractModule(ABC):
         incs = list(dict.fromkeys(incs))
         return incs
 
-    def getCompilerOpts(self, mh: ModuleHandle):
+    def getAllSrcsC(self) -> list:
+        """Util method for get all sources in module, type C
+
+        Returns:
+            list: list of sources paths realtive to project
+        """        
+        return self.findSrcs(SrcType.C)
+
+    def getAllIncsC(self) -> list:
+        """Ütil method for get all includes in module, type C 
+
+        Returns:
+            list: list of includes paths realtive to project
+        """        
+        return self.findIncs(IncType.C)
+
+    def getCompilerOpts(self):
+        """Get special compiler options for module
+        """        
         pass
 
-class ExternalModule(AbstractModule):
-    
+
+class BasicCModule(AbstractModule):
+    """Basic C module, find all sources and includes in module path
+
+    Args:
+        path (str): path to module, _mk.py file.
+    """
     def __init__(self, path):
-        """
-        Init external module, call getModulePath and execute the remote module
-        """
+        super().__init__(path)
+
+    def getSrcs(self) -> list:
+        """Return list with all sources in module path
+
+        Returns:
+            list: sources paths
+        """        
+        return self.getAllSrcsC()
+
+    def getIncs(self) -> list:
+        """return list with all includes in module path
+
+        Returns:
+            list: includes path 
+        """        
+        return self.getAllIncsC()
+
+class ExternalModule(AbstractModule):
+    """The ExternalModule object that inherits from AbstractModule for include external pymaketool module 
+
+    Args:
+        path (str): path to module, _mk.py file.
+
+    Attributes:
+        remoteModule (AbstractModule): remote module object.
+    
+    Raises:
+            AttributeError: path is not valid
+    """
+    def __init__(self, path):
         super().__init__(path)
         try:
             modPath = self.getModulePath()
@@ -303,41 +387,51 @@ class ExternalModule(AbstractModule):
     
     @abstractmethod
     def getModulePath(self)->str:
-        """
-        Return path string of external module
+        """Abstract methos to get string path of external module
+
+        Returns:
+            str: path of external module
         """
         pass
 
-    def init(self, mh:ModuleHandle):
-        """
-        call and return init from remoteModule 
+    def init(self):
+        """Call and return init from remote module
+
+        Returns:
+            object: may be StaticLibrary object or None
         """
         try:
-            return self.remoteModule.init(mh)
+            return self.remoteModule.init()
         except AttributeError as ae:
             log.debug(ae)
         except Exception as ex:
             log.exception(ex)
             exit(-1)
 
-    def getSrcs(self, mh:ModuleHandle):
+    def getSrcs(self):
+        """Call and return getSrcs from remote module
+
+        Returns:
+            list: list of sources
         """
-        call and return getSrcs from remoteModule
-        """
-        return self.remoteModule.getSrcs(mh)
+        return self.remoteModule.getSrcs()
         
-    def getIncs(self, mh:ModuleHandle):
+    def getIncs(self):
+        """Call and return getIncs from remote module
+
+        Returns:
+            list: list of includes
         """
-        call and return getIncs from remoteModule
-        """
-        return self.remoteModule.getIncs(mh)
+        return self.remoteModule.getIncs()
     
-    def getCompilerOpts(self, mh:ModuleHandle):
-        """
-        call and return getCompilerOpts from remoteModule
+    def getCompilerOpts(self):
+        """Call and return getCompilerOpts from remote module
+
+        Returns:
+            disct: compiler options
         """
         try:
-            return self.remoteModule.getCompilerOpts(mh)
+            return self.remoteModule.getCompilerOpts()
         except AttributeError as ae:
             log.debug(ae)
         except Exception as ex:
@@ -346,12 +440,18 @@ class ExternalModule(AbstractModule):
 
 
 def ModuleClass(clazz):
+    """Add class to modules of pymaketool
+
+    Args:
+        clazz (class): Class inheritance of Module.AbstractModule
+    """    
     if issubclass(clazz, AbstractModule):
         log.debug(f"class \'{clazz.__name__}\' is inheritance of Module.AbstractModule")
     else:
         log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
 
     classdir = str(clazz)
+    log.debug(f"class dir {classdir}")
     m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
     modulePath = None
     if m:

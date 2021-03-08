@@ -277,10 +277,10 @@ Makeclass
 
 .. code-block:: python
     
-    from pymakelib import IProject, Makeclass
+    from pymakelib import AbstractMake, Makeclass
 
     @Makeclass
-    class Project(IProject):
+    class Project(AbstractMake):
 
         def getProjectSettings(self, **kwargs):
             ...
