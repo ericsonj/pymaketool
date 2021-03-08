@@ -41,8 +41,10 @@ from pymakelib import moduleignore
 from pymakelib import eclipse_files
 from pymakelib import make_files
 from pymakelib import Addon
-from pymakelib import log
+from pymakelib import Logger
 from pymakelib import project
+
+log = Logger.getLogger()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')

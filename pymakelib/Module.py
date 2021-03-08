@@ -34,9 +34,9 @@ from pathlib import Path
 from . import preconts as K
 from . import git
 from abc import ABC,abstractmethod
-from . import Log
+from . import Logger
 
-log = Log.getLogger()
+log = Logger.getLogger()
 
 class SrcType:
     C = ['.c']

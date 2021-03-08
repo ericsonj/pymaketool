@@ -29,9 +29,37 @@
 import os
 import inspect
 from abc import ABC,abstractmethod
-from .Log import getLogger
+import logging
+from logging import Logger as SysLogger
 
-log = getLogger(__name__)
+FORMATTER = logging.Formatter("%(levelname)-8s%(filename)s:%(lineno)d  %(message)s")
+
+class Logger:
+    __instance = None
+    @staticmethod
+    def getInstance():
+        """ Static access method. """
+        if Logger.__instance == None:
+            Logger()
+        return Logger.__instance
+
+    @staticmethod
+    def getLogger() -> logging.Logger:
+        return Logger.getInstance().log
+
+    def __init__(self):
+        """ Virtually private constructor. """
+        if Logger.__instance != None:
+            raise Exception("This class is a singleton!")
+        else:
+            Logger.__instance = self
+        self.log = SysLogger.manager.getLogger('pymaketool')
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(FORMATTER)
+        self.log.addHandler(console_handler)
+        self.log.setLevel(os.environ.get('LOGLEVEL', 'NOTSET'))
+
+__log = Logger().getLogger()
 
 class MKVARS():
     LD      = "$(LD)"
@@ -97,7 +125,7 @@ class AbstractMake(ABC):
 def Makeclass(clazz):
     obj = clazz()
     if not isinstance(obj, AbstractMake):
-        log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.AbstractMake")
+        __log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.AbstractMake")
     global ProjectInstance
     ProjectInstance = obj
 
@@ -107,7 +135,7 @@ def getProjectInstance() -> AbstractMake:
         _ = ProjectInstance
         return ProjectInstance
     except NameError:
-        log.debug("not Makeclass mode")
+        __log.debug("not Makeclass mode")
         pass
     return None
 

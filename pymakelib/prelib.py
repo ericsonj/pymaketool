@@ -36,7 +36,9 @@ from .Module import CompilerOptions
 from .Module import Module, getModuleInstance, cleanModuleInstance
 from .Module import StaticLibrary
 from . import getProjectInstance
-from . import log
+from . import Logger
+
+log = Logger.getLogger()
 
 def addToList(dstList: list, values):
     if isinstance(values, list):
