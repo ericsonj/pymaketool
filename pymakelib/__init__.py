@@ -83,7 +83,7 @@ def MOD_PATH(wk):
     return wk['modPath']
 
 
-class D:
+class Define:
     """
     Direct define: { '__USE_FILE__': D('file.h') } => -D__USE_FILE__=file.h
     """

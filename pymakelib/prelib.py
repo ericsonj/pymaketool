@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 import importlib.util
 from . import preconts as K
-from . import D
+from . import Define as D
 from .module import ModuleHandle
 from .module import CompilerOptions
 from .module import Module, getModuleInstance, cleanModuleInstance

@@ -38,7 +38,7 @@
 # listconf = {'C_INCLUDES': [...], 'C_SYMBOLS' : [...], 'CPP_INCLUDES': [...], 'CPP_SYMBOLS': [...]}
 from pathlib import Path
 from . import preconts as K
-from . import D
+from . import Define as D
 import os.path
 from os import path
 

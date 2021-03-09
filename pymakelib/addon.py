@@ -7,7 +7,7 @@ def init(func):
     initAddonFuncs.append(func)
 
 
-def Addon(inst):
+def add(inst):
     if inspect.isclass(inst):
         initAddonClass.append(inst)
     elif inspect.isfunction(inst):

@@ -29,7 +29,7 @@
 from pymakelib import Pymaketool
 from pymakelib import Logger
 from pymakelib.module import CompilerOptions
-from pymakelib import D
+from pymakelib import Define
 
 log = Logger.getLogger()
 
