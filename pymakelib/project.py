@@ -28,7 +28,7 @@
 
 from pymakelib import Pymaketool
 from pymakelib import Logger
-from pymakelib.Module import CompilerOptions
+from pymakelib.module import CompilerOptions
 from pymakelib import D
 
 log = Logger.getLogger()

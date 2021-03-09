@@ -31,10 +31,10 @@ from pathlib import Path
 import importlib.util
 from . import preconts as K
 from . import D
-from .Module import ModuleHandle
-from .Module import CompilerOptions
-from .Module import Module, getModuleInstance, cleanModuleInstance
-from .Module import StaticLibrary
+from .module import ModuleHandle
+from .module import CompilerOptions
+from .module import Module, getModuleInstance, cleanModuleInstance
+from .module import StaticLibrary
 from . import getProjectInstance
 from . import Logger
 
