@@ -1,22 +1,22 @@
 import unittest
 
-from pymakelib import Module
+from pymakelib import module
 
 
 class TestModule(unittest.TestCase):
 
     def test_src_type(self):
-        self.assertIn('.c', Module.SrcType.C)
-        self.assertIn('.C', Module.SrcType.CPP)
+        self.assertIn('.c', module.SrcType.C)
+        self.assertIn('.C', module.SrcType.CPP)
         
 
     def test_inc_type(self):
-        self.assertIn('.h', Module.IncType.C)
-        self.assertIn('.hpp', Module.IncType.CPP)
+        self.assertIn('.h', module.IncType.C)
+        self.assertIn('.hpp', module.IncType.CPP)
 
 
     def test_basic_c_module(self):
-        class ModTest(Module.BasicCModule):
+        class ModTest(module.BasicCModule):
             pass
         
         mod = ModTest('mod')
@@ -26,7 +26,7 @@ class TestModule(unittest.TestCase):
 
 
     def test_abstract_module(self):
-        class ModTest(Module.AbstractModule):
+        class ModTest(module.AbstractModule):
 
             def getSrcs(self) -> list:
                 return [
