@@ -43,6 +43,5 @@ class TestModule(unittest.TestCase):
         self.assertIsInstance(mod.getSrcs(), list)
         self.assertIsInstance(mod.getIncs(), list)
 
-
 if __name__ == '__main__':
     unittest.main()
