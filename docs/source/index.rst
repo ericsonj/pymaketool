@@ -26,12 +26,12 @@ Release v\ |version|. (:ref:`Installation <install>`)
 .. code-block:: python
 
    # app_mk.py
-   from pymaketool.Module import ModuleHandle
+   from pymakelib import module
 
-   def getSrcs(m: ModuleHandle):
+   def getSrcs(m: module.ModuleHandle):
       return m.getAllSrcsC()
    
-   def getIncs(m: ModuleHandle):
+   def getIncs(m: module.ModuleHandle):
       return m.getAllIncsC()
 
 Or in class mode:
@@ -39,15 +39,11 @@ Or in class mode:
 .. code-block:: python
 
    # app_mk.py
-   from pymakelib.Module import AbstractModule, ModuleClass, ModuleHandle
+   from pymakelib import module
 
-   @ModuleClass
-   class Lib(AbstractModule):
-      def getSrcs(self, m: ModuleHandle):
-         return m.getAllSrcsC()
-
-      def getIncs(self, m: ModuleHandle):
-         return m.getAllIncsC()
+   @module.ModuleClass
+   class mod(module.BasicCModule):
+      pass
 
 **pymaketool** allow to you create C projects with anything structure extremely easily.
 Use Eclipse IDE for open and edit your project, pymaketool generates the necessary files for this.

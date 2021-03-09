@@ -11,7 +11,7 @@ Example of Makefile.py for build a linux application:
 
     from os.path import basename
     from pymakelib import MKVARS
-    from pymakelib import Toolchain as tool
+    from pymakelib import toolchain as tool
 
     def getProjectSettings():
         """
