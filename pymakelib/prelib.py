@@ -40,7 +40,7 @@ from . import Logger
 
 log = Logger.getLogger()
 
-def addToList(dstList: list, values):
+def add_value2list(dstList: list, values):
     if isinstance(values, list):
         for item in values:
             dstList.append(item)
@@ -139,13 +139,13 @@ def readModule(modPath, compilerOpts, goals=None):
 
         result = wprGetSrcs(mod, modHandle)
         if result:
-            addToList(srcs, result)
+            add_value2list(srcs, result)
         else:
             log.debug(f"\'{mod.__name__}\' return empty sources")
 
         result = wprGetIncs(mod, modHandle)
         if result:
-            addToList(incs, result)
+            add_value2list(incs, result)
         else:
             log.debug(f"\'{mod.__name__}\' return empty includes")
 
@@ -181,13 +181,13 @@ def readModule(modPath, compilerOpts, goals=None):
 
         result = wprGetSrcs(mod, modHandle, moduleInstance)
         if result:
-            addToList(srcs, result)
+            add_value2list(srcs, result)
         else:
             log.debug(f"\'{type(moduleInstance).__name__}\' return empty sources")
 
         result = wprGetIncs(mod, modHandle, moduleInstance)
         if result:
-            addToList(incs, result)
+            add_value2list(incs, result)
         else:
             log.debug(f"\'{type(moduleInstance).__name__}\' return empty includes")
 
@@ -206,19 +206,9 @@ def readModule(modPath, compilerOpts, goals=None):
 
     return modules
 
-def getLineSeparator(key: str, num: int):
-    header = ''
-    for _ in range(num):
-        header += key
-    return header
 
-
-def listToString(l):
-    aux = ""
-    for item in l:
-        aux += (str(item) + " ")
-    aux.strip()
-    return aux
+def list2str(l):
+    return ' '.join(l)
 
 
 def macrosDictToString(macros):
@@ -253,7 +243,7 @@ def compilerOptsByModuleToLine(compOpts):
                     macros = macrosDictToString(moduleCompileOps[key])
                     mstr.append(macros)
                 else:
-                    mstr.append(listToString(moduleCompileOps[key]))
+                    mstr.append(list2str(moduleCompileOps[key]))
 
         elif isinstance(moduleCompileOps, list):
             for item in moduleCompileOps:
@@ -385,7 +375,7 @@ def read_Makefilepy(workpath=''):
                         'COMPILER_FLAGS += {}\n'.format(macrosDictToString(compOpts[key])))
                 else:
                     makevars.write(
-                        'COMPILER_FLAGS += {}\n'.format(listToString(compOpts[key])))
+                        'COMPILER_FLAGS += {}\n'.format(list2str(compOpts[key])))
         elif isinstance(compOpts, list):
             for item in compOpts:
                 makevars.write('COMPILER_FLAGS += {}\n'.format(item))
@@ -402,7 +392,7 @@ def read_Makefilepy(workpath=''):
             for keys in linkOpts:
                 makevars.write('# {0}\n'.format(keys))
                 makevars.write(
-                    'LDFLAGS += {}\n'.format(listToString(linkOpts[keys])))
+                    'LDFLAGS += {}\n'.format(list2str(linkOpts[keys])))
         elif isinstance(linkOpts, list):
             for item in linkOpts:
                 makevars.write('LDFLAGS += {}\n'.format(item))

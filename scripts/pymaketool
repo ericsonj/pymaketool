@@ -146,6 +146,12 @@ srcsfile = open('srcs.mk', 'w')
 
 includes = []
 
+def getLineSeparator(key: str, num: int):
+    header = ''
+    for _ in range(num):
+        header += key
+    return header
+
 log.debug('**load modules**')
 for mod in modules:
     if mod.isEmpty():
@@ -154,9 +160,9 @@ for mod in modules:
 
     print('Module: {}'.format(mod.filename))
     log.info('read module \'{}\''.format(mod.filename))
-    srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
+    srcsfile.write("{}\n".format(getLineSeparator('#', 52)))
     srcsfile.write("#{0:^50}#\n".format(str(mod.filename)))
-    srcsfile.write("{}\n".format(plib.getLineSeparator('#', 52)))
+    srcsfile.write("{}\n".format(getLineSeparator('#', 52)))
 
     if mod.staticLib:
         log.debug(f"module \'{mod.filename}\' static library name {mod.staticLib.name}")
