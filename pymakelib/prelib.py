@@ -46,8 +46,11 @@ def addToList(dstList: list, values):
             dstList.append(item)
     elif isinstance(values, dict):
         for keys in values:
-            for item in values[keys]:
-                dstList.append(item)
+            if isinstance(values[keys], list):
+                for item in values[keys]:
+                    dstList.append(item)
+            else:
+                dstList.append(values[keys])
     else:
         dstList.append(values)
 
