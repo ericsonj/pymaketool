@@ -22,7 +22,7 @@ The **func.py** can import in **app_mk.py**:
 
 .. code-block:: python
 
-    from pybuild.Module import ModuleHandle
+    from pymakelib.module import ModuleHandle
     import scripts.func as f
 
 

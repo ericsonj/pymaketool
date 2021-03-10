@@ -4,15 +4,15 @@ Addons
 ======
 
 pymaketool support addons for extenden functionalities. The addons will be executed before the compilation of the project.
-Add the next lines en `Makefile.py`_
+Add the next lines en **Makefile.py**
 
 .. code-block:: python
 
-    from pymakelib.Addon import Addon
+    from pymakelib import addon
 
-    Addon(yourAddonFunction)
+    addon.add(yourAddonFunction)
     # or
-    Addon(yourAddonClass)
+    addon.add(yourAddonClass)
 
 Addon  function
 ---------------
@@ -132,7 +132,7 @@ Add in Makefile.py the line:
 
 .. code-block:: python
 
-    Addon(vscode_init)
+    addon.add(vscode_init)
 
 Addon  class
 ------------
@@ -141,9 +141,9 @@ Scalable version for development and extenden addons, for example:
 
 .. code-block:: python
 
-    from pymakelib.Addon import AddonAbstract
+    from pymakelib import addon
 
-    class MyAddon(AddonAbstract):
+    class MyAddon(addon.AddonAbstract):
         """
         Print project and compiler settings
         """
@@ -155,4 +155,4 @@ Add in Makefile.py the line:
 
 .. code-block:: python
 
-    Addon(MyAddon)
+    addon.add(MyAddon)

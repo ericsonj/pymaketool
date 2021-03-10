@@ -4,50 +4,10 @@ pymakelib package
 Submodules
 ----------
 
-pymakelib.Addon module
+pymakelib.addon module
 ----------------------
 
-.. automodule:: pymakelib.Addon
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pymakelib.Ceedling module
--------------------------
-
-.. automodule:: pymakelib.Ceedling
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pymakelib.Log module
---------------------
-
-.. automodule:: pymakelib.Log
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pymakelib.Module module
------------------------
-
-.. automodule:: pymakelib.Module
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pymakelib.Project module
-------------------------
-
-.. automodule:: pymakelib.Project
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pymakelib.Toolchain module
---------------------------
-
-.. automodule:: pymakelib.Toolchain
+.. automodule:: pymakelib.addon
    :members:
    :undoc-members:
    :show-inheritance:
@@ -60,10 +20,10 @@ pymakelib.armsize module
    :undoc-members:
    :show-inheritance:
 
-pymakelib.armsize2 module
+pymakelib.ceedling module
 -------------------------
 
-.. automodule:: pymakelib.armsize2
+.. automodule:: pymakelib.ceedling
    :members:
    :undoc-members:
    :show-inheritance:
@@ -116,6 +76,14 @@ pymakelib.make\_files module
    :undoc-members:
    :show-inheritance:
 
+pymakelib.module module
+-----------------------
+
+.. automodule:: pymakelib.module
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pymakelib.moduleignore module
 -----------------------------
 
@@ -156,6 +124,14 @@ pymakelib.printsrc module
    :undoc-members:
    :show-inheritance:
 
+pymakelib.project module
+------------------------
+
+.. automodule:: pymakelib.project
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pymakelib.pycodegen module
 --------------------------
 
@@ -164,10 +140,10 @@ pymakelib.pycodegen module
    :undoc-members:
    :show-inheritance:
 
-pymakelib.vscode module
------------------------
+pymakelib.toolchain module
+--------------------------
 
-.. automodule:: pymakelib.vscode
+.. automodule:: pymakelib.toolchain
    :members:
    :undoc-members:
    :show-inheritance:

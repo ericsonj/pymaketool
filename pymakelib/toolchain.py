@@ -17,22 +17,40 @@ def getGCCHeaderFiles(cmd_gcc):
     return gcc_includes
 
 
+def get_gcc_arm_none_eabi(binLocation='', prefix='arm-none-eabi-', extIncludes=[]) -> dict:
+    """Get dictionary with gcc compiler set of arm-none-eabi-
+
+    Args:
+        binLocation (str, optional): Location of toolchain binary. Defaults to ''.
+        prefix (str, optional): prefix of ARM toolchain. Defaults to 'arm-none-eabi-'.
+        extIncludes (list, optional): list of external includes. Defaults to [].
+
+    Returns:
+        dict: set of gcc compiler e.g. {'CC': 'arm-none-eabi-gcc' ... }
+    """    
+    return confGCC(binLocation, prefix, extIncludes)
+
+
 def confARMeabiGCC(binLocation='', prefix='arm-none-eabi-', extIncludes=[]):
     return confGCC(binLocation, prefix, extIncludes)
+
+
+def get_gcc_linux(bin_location='', ext_incs=[]) -> dict:
+    """Get dictionary with gcc compiler set for linux   
+
+    Args:
+        bin_location (str, optional): location of toolchain. Defaults to ''.
+        ext_incs (list, optional): list of external includes. Defaults to [].
+
+    Returns:
+        dict: set of gcc compiler e.g. {'CC': 'gcc' ... }
+    """    
+    return confLinuxGCC(binLocation=bin_location, extIncludes=ext_incs)
 
 
 def confLinuxGCC(binLocation='', extIncludes=[]):
     return confGCC(binLocation, '', extIncludes)
 
-
-# COMPILERSET_NM          = 'NM'
-# COMPILERSET_RANLIB      = 'RANLIB'
-# COMPILERSET_STRINGS     = 'STRINGS'
-# COMPILERSET_STRIP       = 'STRIP'
-# COMPILERSET_CXXFILT     = 'CXXFILT'
-# COMPILERSET_ADDR2LINE   = 'ADD2LINE'
-# COMPILERSET_READELF     = 'READELF'
-# COMPILERSET_ELFEDIT     = 'ELFEDIT'
 
 def confGCC(binLocation='', prefix='', extIncludes=[]):
     cmd_gcc = binLocation + prefix + 'gcc'

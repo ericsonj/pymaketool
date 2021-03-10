@@ -28,9 +28,9 @@
 
 
 from pathlib import Path
-from .Module import ModuleHandle
-from .Module import SrcType
-from .Module import IncType
+from .module import ModuleHandle
+from .module import SrcType
+from .module import IncType
 
 def getAllSrcs(wkmh, srcType: SrcType):
     if isinstance(wkmh, ModuleHandle):

@@ -15,7 +15,7 @@ The file name must end with **_mk.py**.
 
 .. code-block:: python
 
-    from pybuild.Module import ModuleHandle
+    from pymakelib.module import ModuleHandle
 
     def init(mh: ModuleHandle):
         """
@@ -57,7 +57,7 @@ The file name must end with **_mk.py**.
 
 .. code-block:: python
 
-    from pybuild.Module import ModuleHandle
+    from pymakelib.module import ModuleHandle
 
     def getSrcs(mh: ModuleHandle):
         return [

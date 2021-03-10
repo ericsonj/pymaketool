@@ -1,4 +1,4 @@
-from .Addon import AddonAbstract
+from .addon import AddonAbstract
 from . import eclipse_cproject as cp
 
 class EclipseAddon(AddonAbstract):

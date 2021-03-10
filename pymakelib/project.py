@@ -27,9 +27,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from pymakelib import Pymaketool
-from pymakelib import log
-from pymakelib.Module import CompilerOptions
-from pymakelib import D
+from pymakelib import Logger
+from pymakelib.module import CompilerOptions
+from pymakelib import Define
+
+log = Logger.getLogger()
 
 def setSettings(settings):
     global __settings
