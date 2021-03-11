@@ -1,11 +1,17 @@
 # pymaketool
 
+<img src="https://img.shields.io/pypi/l/pymaketool.svg">
+<img src="https://img.shields.io/pypi/wheel/pymaketool.svg">
+<img src="https://img.shields.io/badge/python-%3E=_3.6-green.svg">
+<img src="https://img.shields.io/github/v/tag/ericsonj/pymaketool">
+<img src="https://github.com/ericsonj/pymaketool/workflows/Test/badge.svg?branch=master">
+
 **pymaketool** is an elegant and simple tool to build and manager large C/C++ projects and libraries.
 The main purpose is to ease the build process of a project using Python for find and organize file sources.
 
 <img src="images/makefile_pyfile.jpg" alt="Kitten" title="makefile vs pymaketool" width="500" />
 
- **pymaketool** process modules of code like objects. This objects ware define by files *_mk.py. With Python you can code how to discover and get source files and include paths, e.g.:
+ **pymaketool** process modules of code like objects. These objects ware define by files **_mk.py*. With Python you can code how to discover and get source files and include paths, e.g.:
 
 ```python
 # File app_mk.py
