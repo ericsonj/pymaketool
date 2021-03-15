@@ -69,4 +69,31 @@ class App():
     
 ```
 
+Remote modules could be load like static libraries  and with special compiler flags. e.g:
+
+```python
+# File extlib_mk.py
+
+from pymakelib import module
+
+@module.ModuleClass
+class ExtLib(module.ExternalModule):
+    
+    def init(self):
+        # Compile modulelib like static library (Optional)
+        return module.StaticLibrary("modulelib", "Release", rebuild=True)
+     
+    def getModulePath(self)->str:
+        # Location of module
+        return '/LIBS/module_lib/module_lib_mk.py'
+
+
+    def getCompilerOpts(self):
+        # Override method and set speacial compiler flags (Optional)
+        opts = project.getCompilerOpts()
+        opts['CONTROL-C-OPTS'] = ['-std=c99']
+        return opts
+    
+```
+
 For more documentation go to [Read the Docs](https://pymaketool.readthedocs.io/en/latest/) 
