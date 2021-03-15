@@ -51,6 +51,21 @@ Or in class mode:
    class mod(module.BasicCModule):
       pass
 
+Load remote module:
+
+.. code-block:: python
+
+   # extlib_mk.py  
+   from pymakelib import module
+
+   @module.ModuleClass
+   class ExtLib(module.ExternalModule):
+      
+      def getModulePath(self)->str:
+         # Location of module
+         return '/LIBS/module_lib/module_lib_mk.py'
+
+
 **pymaketool** allow to you create C projects with anything structure extremely easily.
 Use Eclipse IDE for open and edit your project, pymaketool generates the necessary files for this.
 
@@ -74,6 +89,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
    user/makefile.py
    user/name_mk.py
    user/user_scripts
+   user/tools
    user/addons
    user/logger
    modules

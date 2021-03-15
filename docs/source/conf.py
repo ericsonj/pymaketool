@@ -22,7 +22,7 @@ copyright = '2020, Ericson Joseph'
 author = 'Ericson Joseph'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.15-rc2'
+release = '2.0.0'
 
 version = release
 
@@ -32,7 +32,8 @@ version = release
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.graphviz'
 ]
 
 napoleon_google_docstring = True
