@@ -11,10 +11,11 @@ setuptools.setup(
     description="Python Makefile Tool",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    scripts = ['scripts/pymaketool', 'scripts/pymaketesting', 'scripts/pybuildanalyzer', 'scripts/pybuildanalyzer2'],
+    scripts = ['scripts/pymaketool', 'scripts/pymaketesting', 'scripts/pybuildanalyzer', 'scripts/pybuildanalyzer2', 'scripts/pymakedot'],
     url="https://github.com/ericsonj/pymaketool",
     license="MIT",
     packages=setuptools.find_packages(),
+    package_data={'': ['*.glade']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

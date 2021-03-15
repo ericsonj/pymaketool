@@ -515,6 +515,8 @@ if mapfile:
 
 # ------------------------------- 
 
+from pkg_resources import resource_filename
+
 for sec in sections:
     if sec.size > 0 and sec.addr > 0:
         syms = list(filter(lambda x: x.ndx == sec.nr and x.size > 0, symbols))
@@ -536,7 +538,7 @@ if regions and sectionsMap:
                     r.sections.append(sec)
 
     if args.gtk:
-        win = GtkRegionsWin(regions, "pybagui.glade")
+        win = GtkRegionsWin(regions, resource_filename("pymakelib.resources.gtk", "pybagui.glade"))
         win.show()
     else:
         view = MemRegionView(regions)
