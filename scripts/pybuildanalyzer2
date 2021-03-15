@@ -396,7 +396,7 @@ class MemRegionView:
 parser = argparse.ArgumentParser(description='Builder Analyzer for ARM firmware')
 parser.add_argument('elf', type=str, help='ELF file')
 parser.add_argument('-g', '--gtk', help='Show in gtk window', action="store_true")
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0.0')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0.1')
 args = parser.parse_args()
 
 cross_compile_prefix = os.environ.get('CROSS_COMPILE', '')
@@ -515,6 +515,8 @@ if mapfile:
 
 # ------------------------------- 
 
+from pkg_resources import resource_filename
+
 for sec in sections:
     if sec.size > 0 and sec.addr > 0:
         syms = list(filter(lambda x: x.ndx == sec.nr and x.size > 0, symbols))
@@ -536,7 +538,7 @@ if regions and sectionsMap:
                     r.sections.append(sec)
 
     if args.gtk:
-        win = GtkRegionsWin(regions, "pybagui.glade")
+        win = GtkRegionsWin(regions, resource_filename("pymakelib.resources.gtk", "pybagui.glade"))
         win.show()
     else:
         view = MemRegionView(regions)
