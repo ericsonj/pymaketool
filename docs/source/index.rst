@@ -74,6 +74,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
    user/makefile.py
    user/name_mk.py
    user/user_scripts
+   user/tools
    user/addons
    user/logger
    modules
