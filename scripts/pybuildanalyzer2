@@ -396,7 +396,7 @@ class MemRegionView:
 parser = argparse.ArgumentParser(description='Builder Analyzer for ARM firmware')
 parser.add_argument('elf', type=str, help='ELF file')
 parser.add_argument('-g', '--gtk', help='Show in gtk window', action="store_true")
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0.0')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0.1')
 args = parser.parse_args()
 
 cross_compile_prefix = os.environ.get('CROSS_COMPILE', '')
