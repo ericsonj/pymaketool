@@ -57,7 +57,7 @@ This utility create a simple dot file (a.out) of pymaketool modules. e.g.:
 
 .. code-block:: bash
 
-    $ pymaketool/scripts/pymakedot app/application/app_mk.py lib/lib_mk.py extlib/extlib_mk.py
+    $ pymakedot app/application/app_mk.py lib/lib_mk.py extlib/extlib_mk.py
     $ xdot a.out
 
 .. graphviz::
