@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/ericsonj/pymaketool",
     license="MIT",
     packages=setuptools.find_packages(),
-    package_data={'': ['*.glade']},
+    package_data={'': ['*.glade', '*.tar.gz']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
