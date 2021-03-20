@@ -61,3 +61,5 @@ Install pymaketool:
 Finally you can check correct installation with:
 
 * ``` pymaketool -v ```
+
+Go back to readme [readme](../../README.md)
