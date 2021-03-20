@@ -96,4 +96,6 @@ class ExtLib(module.ExternalModule):
     
 ```
 
+For install guide go to [install-guide](docs/install/install-guide.md)
+
 For more documentation go to [Read the Docs](https://pymaketool.readthedocs.io/en/latest/) 
