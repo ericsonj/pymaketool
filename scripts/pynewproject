@@ -28,20 +28,82 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
+import signal
 import importlib
+import argparse
+import pkg_resources
+from pymakelib import Logger
 
-mod = importlib.import_module('pynewproject_c_project.generate')
-get_generator = getattr(mod, 'get_generator')
-g = get_generator()
-g.generate()
+log = Logger.getLogger()
 
-# import pkg_resources
+def signal_handler(sig, frame):
+    sys.exit(0)
 
-# installed_packages = list(pkg_resources.working_set)
+signal.signal(signal.SIGINT, signal_handler)
 
-# for i in installed_packages:
-#     if str(i.key).startswith("pygenerator"):
-#         print(f"{i.key}=={i.version}")
+def get_clazz(generator_path: str):
+    return generator_path.split(".")[-1]
 
-# installed_packages_list = sorted(["%s==%s" % (i.key, i.version) for i in installed_packages])
-# print(installed_packages_list)⏎                   
+def get_module(generator_path: str):
+    return generator_path.rsplit('.', 1)[0]
+
+pkgs = [
+    'pymakelib.pynewproject_cproject'
+]
+
+log.debug("Search pynewproject-* packages installed")
+
+installed_packages = list(pkg_resources.working_set)
+for i in installed_packages:
+    if str(i.key).startswith("pynewproject"):
+        pkgs.append(str(i.key).replace('-', "_"))
+
+log.debug(pkgs)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('project', help="Project key", nargs='?')
+parser.add_argument('-l', '--list', action='store_true', help="List projects")
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
+args = parser.parse_args()
+
+if args.list:
+    print("Projects availables:")
+    for p in pkgs:
+        try:
+            mod = importlib.import_module(p)
+            generators = getattr(mod, 'generators')
+            for g in generators:
+                class_name = get_clazz(g)
+                module = get_module(g)
+                genmod = importlib.import_module("{}.{}".format(p, module))
+                clazz = getattr(genmod, class_name)
+                obj = clazz()
+                info = obj.info()
+                generator_desc = '' if not 'name' in info else info['desc']
+                print(f" {class_name:<16}{generator_desc}")
+        except Exception as ex:
+            log.error(ex)
+    exit(0)
+
+if args.project:
+    for p in pkgs:
+        try:
+            mod = importlib.import_module(p)
+            generators = getattr(mod, 'generators')
+            for g in generators:
+                class_name = get_clazz(g)
+                if class_name == args.project:
+                    log.debug(f"project {class_name} matched")
+                    module = get_module(g)
+                    genmod = importlib.import_module("{}.{}".format(p, module))
+                    clazz = getattr(genmod, class_name)
+                    obj = clazz()
+                    log.debug("run exec_generator")
+                    obj.exec_generator()
+                    exit(0)
+        except Exception as ex:
+            log.error(ex)
+    print(f"Generator {args.project} not found")
+else:
+    print("Add project .e.g:\npynewproject Cproject")
