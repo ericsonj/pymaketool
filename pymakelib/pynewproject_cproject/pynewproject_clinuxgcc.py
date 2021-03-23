@@ -14,6 +14,17 @@ class CLinuxGCC(nproject.BasicGenerator):
             "desc": "C Linux GCC Project"
         }
 
+    def print_help(self):
+        print("""
+Basic C Linux GCC Project
+
+Tokens:
+    author
+    project_name
+
+Command: pynewproject CLinuxGCC author=\\\"Author\\\" project_name=project
+        """)
+
     def get_temp_files(self):
         return [
             'app/inc/main.h',
@@ -30,14 +41,11 @@ class CLinuxGCC(nproject.BasicGenerator):
 
     def get_attrs(self, **kwargs) -> dict:
 
-        args = kwargs['args']
-        print(args)
-        args_dict = {}
-        for a in args:
-            key = a.split('=')[0]
-            value = a.split('=')[1]
-            args_dict[key] = value
-        args = args_dict
+        args = self.parse_args(kwargs['args'])
+
+        if 'help' in args:
+            self.print_help()
+            exit(0)
 
         tokens = {
             'author':       'Ericson Joseph',

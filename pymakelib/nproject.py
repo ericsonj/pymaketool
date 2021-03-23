@@ -88,6 +88,18 @@ class BasicGenerator(AbstractGenerator):
     def get_attrs(self, **kwargs) -> dict:
         pass
 
+
+    def parse_args(self, args:list) -> dict:
+        res = []
+        for sub in args:
+            if '=' in sub:
+                res.append(map(str.strip, sub.split('=', 1)))
+            else:
+                res.append((sub, None))
+        res = dict(res)
+        return res
+
+
     def copyFile(self, input_file, output_file, tokens: dict):
         p = Path(output_file.parent)
         p.mkdir(parents=True, exist_ok=True)
