@@ -16,6 +16,9 @@ setuptools.setup(
     license="MIT",
     packages=setuptools.find_packages(),
     package_data={'': ['*.glade', '*.tar.gz']},
+    install_requires=[
+        'prompt_toolkit',
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
