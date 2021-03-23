@@ -78,14 +78,14 @@ class AbstractGenerator(ABC):
         pass
 
     @abstractmethod
-    def exec_generator(self):
+    def exec_generator(self, **kwargs):
         pass
 
 
 class BasicGenerator(AbstractGenerator):
 
     @abstractmethod
-    def get_attrs(self) -> dict:
+    def get_attrs(self, **kwargs) -> dict:
         pass
 
     def copyFile(self, input_file, output_file, tokens: dict):
@@ -98,9 +98,9 @@ class BasicGenerator(AbstractGenerator):
                 line = re.sub("<%=[ ]*" + token + "[ ]*%>", value, line)
             output_file.write(line)
 
-    def exec_generator(self):
+    def exec_generator(self, **kwargs):
         try:
-            attrs = self.get_attrs()
+            attrs = self.get_attrs(**kwargs)
             self.temp_name      = attrs['temp_name']
             self.temp_gzip_file = attrs['temp_gzip_file']
             self.temp_files     = attrs['temp_files']

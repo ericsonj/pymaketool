@@ -34,6 +34,7 @@ import importlib
 import argparse
 import pkg_resources
 from pymakelib import Logger
+import shlex
 
 log = Logger.getLogger()
 
@@ -61,49 +62,54 @@ for i in installed_packages:
 
 log.debug(pkgs)
 
+generator_objs = []
+
+for p in pkgs:
+    try:
+        mod = importlib.import_module(p)
+        generators = getattr(mod, 'generators')
+        for g in generators:
+            class_name = get_clazz(g)
+            module = get_module(g)
+            genmod = importlib.import_module("{}.{}".format(p, module))
+            clazz = getattr(genmod, class_name)
+            obj = clazz()
+            generator_objs.append(obj)
+    except Exception as ex:
+        log.error(ex)
+
 parser = argparse.ArgumentParser()
-parser.add_argument('project', help="Project key", nargs='?')
-parser.add_argument('-l', '--list', action='store_true', help="List projects")
+parser.add_argument('project', help="Project key", nargs='*')
+parser.add_argument('-l', '--list', action='store_true', help="List projects availables")
 parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
 args = parser.parse_args()
 
-if args.list:
+def print_projects_availables():
     print("Projects availables:")
-    for p in pkgs:
+    for obj in generator_objs:
         try:
-            mod = importlib.import_module(p)
-            generators = getattr(mod, 'generators')
-            for g in generators:
-                class_name = get_clazz(g)
-                module = get_module(g)
-                genmod = importlib.import_module("{}.{}".format(p, module))
-                clazz = getattr(genmod, class_name)
-                obj = clazz()
-                info = obj.info()
-                generator_desc = '' if not 'name' in info else info['desc']
-                print(f" {class_name:<16}{generator_desc}")
+            info = obj.info()
+            generator_desc = '' if not 'name' in info else info['desc']
+            print(f"  {obj.__class__.__name__:<24}{generator_desc}")
         except Exception as ex:
             log.error(ex)
+
+if args.list:
+    print_projects_availables()
     exit(0)
 
 if args.project:
-    for p in pkgs:
+    for obj in generator_objs:
         try:
-            mod = importlib.import_module(p)
-            generators = getattr(mod, 'generators')
-            for g in generators:
-                class_name = get_clazz(g)
-                if class_name == args.project:
-                    log.debug(f"project {class_name} matched")
-                    module = get_module(g)
-                    genmod = importlib.import_module("{}.{}".format(p, module))
-                    clazz = getattr(genmod, class_name)
-                    obj = clazz()
-                    log.debug("run exec_generator")
-                    obj.exec_generator()
-                    exit(0)
+            if args.project[0] == obj.__class__.__name__:
+                log.debug("run exec_generator")
+                options = ' '.join(args.project[1:])
+                obj.exec_generator(args=shlex.split(options))
+                exit(0)
         except Exception as ex:
             log.error(ex)
     print(f"Generator {args.project} not found")
 else:
-    print("Add project .e.g:\npynewproject Cproject")
+    parser.print_help()
+    print("\r")
+    print_projects_availables()
