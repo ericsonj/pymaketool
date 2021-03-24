@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pymaketool",
-    version="2.0.1",
+    version="2.0.2",
     author="Ericson Joseph",
     author_email="ericsonjoseph@gmail.com",
     description="Python Makefile Tool",
