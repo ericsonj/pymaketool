@@ -1,6 +1,6 @@
 import subprocess
 import tempfile
-
+from pathlib import Path
 
 def getGCCHeaderFiles(cmd_gcc):
     gcc_includes = []
@@ -53,22 +53,23 @@ def confLinuxGCC(binLocation='', extIncludes=[]):
 
 
 def confGCC(binLocation='', prefix='', extIncludes=[]):
-    cmd_gcc = binLocation + prefix + 'gcc'
-    cmd_gxx = binLocation + prefix + 'g++'
-    cmd_ld = binLocation + prefix + 'gcc'
-    cmd_ar = binLocation + prefix + 'ar'
-    cmd_as = binLocation + prefix + 'as'
-    cmd_objcopy = binLocation + prefix + 'objcopy'
-    cmd_size = binLocation + prefix + 'size'
-    cmd_objdump = binLocation + prefix + 'objdump'
-    cmd_nm = binLocation + prefix + 'nm'
-    cmd_ranlib = binLocation + prefix + 'ranlib'
-    cmd_strings = binLocation + prefix + 'strings'
-    cmd_strip = binLocation + prefix + 'strip'
-    cmd_cxxfilt = binLocation + prefix + 'c++filt'
-    cmd_addr2line = binLocation + prefix + 'addr2line'
-    cmd_readelf = binLocation + prefix + 'readelf'
-    cmd_elfedit = binLocation + prefix + 'elfedit'
+    binpath = Path(binLocation)
+    cmd_gcc = str(binpath / (prefix + 'gcc'))
+    cmd_gxx = str(binpath / (prefix + 'g++'))
+    cmd_ld = str(binpath / (prefix + 'gcc'))
+    cmd_ar = str(binpath / (prefix + 'ar'))
+    cmd_as = str(binpath / (prefix + 'as'))
+    cmd_objcopy = str(binpath / (prefix + 'objcopy'))
+    cmd_size = str(binpath / (prefix + 'size'))
+    cmd_objdump = str(binpath / (prefix + 'objdump'))
+    cmd_nm = str(binpath / (prefix + 'nm'))
+    cmd_ranlib = str(binpath / (prefix + 'ranlib'))
+    cmd_strings = str(binpath / (prefix + 'strings'))
+    cmd_strip = str(binpath / (prefix + 'strip'))
+    cmd_cxxfilt = str(binpath / (prefix + 'c++filt'))
+    cmd_addr2line = str(binpath / (prefix + 'addr2line'))
+    cmd_readelf = str(binpath / (prefix + 'readelf'))
+    cmd_elfedit = str(binpath / (prefix + 'elfedit'))
 
     gcc_includes = getGCCHeaderFiles(cmd_gcc)
     gcc_includes = gcc_includes + extIncludes

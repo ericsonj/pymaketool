@@ -6,15 +6,40 @@ Installation of pymaketool
 This part of the documentation covers the installation of pymaketool.
 The first step to using any software package is getting it properly installed.
 
-Install
--------
-
-To install pymaketool (only support for python 3), simply run this simple command in your terminal of choice.
+Ubuntu/debian
+-------------
 
 .. code-block:: bash
 
-   $ pip install pymaketool
+    $ sudo apt install -y python3 python3-pip python3-gi python3-gi-cairo gir1.2-gtk-3.0 git time zip
+    $ pip3 install pymaketool
 
+Fedora
+------
+
+.. code-block:: bash
+
+    $ sudo dnf install python3-gobject gtk3
+    $ sudo dnf install python3-pip
+    $ pip3 install pymaketool
+
+Arch Linux
+----------
+
+.. code-block:: bash
+
+    $ sudo pacman -S python-gobject gtk3
+    $ sudo pacman -S python-pip
+    $ pip install pymaketool
+
+macOS
+-----
+
+.. code-block:: bash
+
+    $ brew install pygobject3 gtk+3
+    $ brew install python3
+    $ pip3 install pymaketool
 
 Get the Source Code
 -------------------
