@@ -80,7 +80,7 @@ for p in pkgs:
 
 parser = argparse.ArgumentParser()
 parser.add_argument('project', help="Project key", nargs='*')
-parser.add_argument('-l', '--list', action='store_true', help="list projects availables")
+parser.add_argument('-l', '--list', action='store_true', help="List projects availables")
 parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
 args = parser.parse_args()
 
@@ -103,8 +103,7 @@ if args.project:
         try:
             if args.project[0] == obj.__class__.__name__:
                 log.debug("run exec_generator")
-                options = ' '.join(args.project[1:])
-                obj.exec_generator(args=shlex.split(options))
+                obj.exec_generator(args=sys.argv[1:]) ## TODO: Check here
                 exit(0)
         except Exception as ex:
             log.error(ex)
