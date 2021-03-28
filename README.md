@@ -10,7 +10,33 @@
 **pymaketool** is an elegant and simple tool to build and manager large C/C++ projects and libraries.
 The main purpose is to ease the build process of a project using Python for find and organize file sources.
 
-<img src="images/makefile_pyfile.jpg" alt="Kitten" title="makefile vs pymaketool" width="500" />
+<img src="https://github.com/ericsonj/pymaketool/raw/master/images/makefile_pyfile.jpg" alt="" title="makefile vs pymaketool" width="500" />
+
+## Quick Start
+
+Install required packages:
+
+### Ubuntu
+```bash
+$ sudo apt-get install -y gcc make python3 python3-pip python3-gi python3-gi-cairo gir1.2-gtk-3.0 git time zip
+```
+
+### Fedora
+```bash
+$ sudo dnf install python3 python3-pip python3-gobject gtk3 time zip git gcc
+```
+
+### Arch Linux
+```bash
+$ sudo pacman -S gcc make python python-pip python-gobject gtk3 time zip git 
+```
+
+Install pymaketool:
+```bash
+$ pip3 install pymaketool 
+```
+
+## Quick Info
 
  **pymaketool** process modules of code like objects. These objects ware define by files **_mk.py*. With Python you can code how to discover and get source files and include paths, e.g.:
 
