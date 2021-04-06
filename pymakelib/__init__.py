@@ -77,7 +77,7 @@ class MKVARS():
     SIZE    = '$(SIZE)'
     TARGET  = '$(TARGET)'
     PROJECT = '$(PROJECT)'
-    STATIC_LIBS = '$(addprefix -L,$(dir $(SLIBS_OBJECTS))) $(addprefix -l,$(SLIBS_NAMES))'
+    STATIC_LIBS = '$(SLIBS_NAMES)'
 
 def MOD_PATH(wk):
     return wk['modPath']

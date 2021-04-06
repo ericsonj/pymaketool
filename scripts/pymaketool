@@ -153,6 +153,7 @@ def getLineSeparator(key: str, num: int):
     return header
 
 log.debug('**load modules**')
+modules = sorted(modules, key=lambda mod: mod.orden)
 for mod in modules:
     if mod.isEmpty():
         log.debug(f"module \'{mod.filename}\' is empty, module skiped*")
@@ -222,14 +223,14 @@ for mod in modules:
  
     if mod.staticLib:
         mkkey = mod.staticLib.name.upper()
-        srcsfile.write('{0}\n'.format(mod.staticLib.lib_objs))
-        srcsfile.write('\n')
-        srcsfile.write('{}\n'.format(mod.staticLib.lib_objs_compile))
-        srcsfile.write('\n')
+        srcsfile.write('{0}'.format(mod.staticLib.lib_objs))
+        srcsfile.write('\n\n' if mod.staticLib.lib_objs else '')
+        srcsfile.write('{}'.format(mod.staticLib.lib_objs_compile))
+        srcsfile.write('\n\n' if mod.staticLib.lib_objs_compile else '')
         srcsfile.write('{}\n'.format(mod.staticLib.lib_compile))
         srcsfile.write('\n\n')
-        srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.name))
-        srcsfile.write('SLIBS_OBJECTS += {}\n'.format(library))
+        srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.lib_linked))
+        srcsfile.write('SLIBS_OBJECTS += {}\n'.format(mod.staticLib.library))
         if mod.staticLib.rebuild:
             srcsfile.write('\n')
             for src in mod.srcs:

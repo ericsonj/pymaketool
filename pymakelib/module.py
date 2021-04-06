@@ -50,15 +50,27 @@ class IncType:
 
 
 class StaticLibrary:
-    def __init__(self, name: str, outputDir: str, rebuild=False):
+    def __init__(self, name: str, outputDir: str, rebuild=False, lib_linked_opts=None, orden=1):
         self.name = name
+        self.orden = orden
         self.outputDir = Path(outputDir)
         self.rebuild = rebuild
         self.mkkey = self.name.upper()
-        self.library = self.outputDir / Path('lib' + self.name + '.a')
+        self.lib_name = 'lib' + self.name + '.a'
+        self.library = self.outputDir / Path(self.lib_name)
         self.lib_objs = f"{self.mkkey}_OBJECTS = $({self.mkkey}_CSRC:%.c=$({self.mkkey}_OUTPUT)/%.o) $({self.mkkey}_CSRC:%.s=$({self.mkkey}_OUTPUT)/%.o)"
         self.lib_objs_compile = f"$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{self.library}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
         self.lib_compile = f"$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))"
+        self.lib_linked_opts = lib_linked_opts
+        self.lib_linked = "-L{0} -l{1} {2}".format(self.outputDir, self.name, self._get_str_linked_opts(self.lib_linked_opts))
+
+    def _get_str_linked_opts(self, opts):
+        if isinstance(opts, str):
+            return opts
+        elif isinstance(opts, list):
+            return ' '.join(opts)
+        else:
+            return ""
 
     def setRebuild(self, rebuild: bool):
         self.rebuild = rebuild
@@ -90,6 +102,7 @@ class Module:
         self.flags = flags
         self.filename = filename
         self.staticLib = staticLib
+        self.orden = 0 if staticLib == None else staticLib.orden
     
     def isEmpty(self):
         if not self.srcs and not self.incs and not self.staticLib:
