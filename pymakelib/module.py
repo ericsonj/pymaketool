@@ -54,6 +54,11 @@ class StaticLibrary:
         self.name = name
         self.outputDir = Path(outputDir)
         self.rebuild = rebuild
+        self.mkkey = self.name.upper()
+        self.library = self.outputDir / Path('lib' + self.name + '.a')
+        self.lib_objs = f"{self.mkkey}_OBJECTS = $({self.mkkey}_CSRC:%.c=$({self.mkkey}_OUTPUT)/%.o) $({self.mkkey}_CSRC:%.s=$({self.mkkey}_OUTPUT)/%.o)"
+        self.lib_objs_compile = f"$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{self.library}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
+        self.lib_compile = f"$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))"
 
     def setRebuild(self, rebuild: bool):
         self.rebuild = rebuild

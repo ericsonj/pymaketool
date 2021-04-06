@@ -214,7 +214,7 @@ for mod in modules:
                 objs = str(src).replace('.cpp', '.o')
                 objs = objs.replace('.c', '.o')
                 objs = objs.replace('.s', '.o')
-                ouputobj = Path(str(projSettings['FOLDER_OUT']) + str(objs))
+                ouputobj = Path(str(projSettings['FOLDER_OUT']) + '/' + str(objs))
                 log.debug(ouputobj)
                 srcsfile.write("{} : CFLAGS = {}\n".format(str(ouputobj), plib.compilerOptsByModuleToLine(mod.flags)))
 
@@ -222,11 +222,11 @@ for mod in modules:
  
     if mod.staticLib:
         mkkey = mod.staticLib.name.upper()
-        srcsfile.write('{0}_OBJECTS = $({0}_CSRC:%.c=$({0}_OUTPUT)/%.o) $({0}_CSRC:%.s=$({0}_OUTPUT)/%.o)\n'.format(mkkey))
+        srcsfile.write('{0}\n'.format(mod.staticLib.lib_objs))
         srcsfile.write('\n')
-        srcsfile.write('$({0}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,"CC",\"{1}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<\n'.format(mkkey, library))
+        srcsfile.write('{}\n'.format(mod.staticLib.lib_objs_compile))
         srcsfile.write('\n')
-        srcsfile.write('$({0}_AR): $({0}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $(filter %.o,$({0}_OBJECTS))'.format(mkkey))
+        srcsfile.write('{}\n'.format(mod.staticLib.lib_compile))
         srcsfile.write('\n\n')
         srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.name))
         srcsfile.write('SLIBS_OBJECTS += {}\n'.format(library))
