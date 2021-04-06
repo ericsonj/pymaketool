@@ -214,8 +214,9 @@ for mod in modules:
                 objs = str(src).replace('.cpp', '.o')
                 objs = objs.replace('.c', '.o')
                 objs = objs.replace('.s', '.o')
-                srcsfile.write("{} : CFLAGS = {}\n".format(
-                    projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
+                ouputobj = Path(str(projSettings['FOLDER_OUT']) + str(objs))
+                log.debug(ouputobj)
+                srcsfile.write("{} : CFLAGS = {}\n".format(str(ouputobj), plib.compilerOptsByModuleToLine(mod.flags)))
 
     srcsfile.write('\n')
  
