@@ -422,6 +422,7 @@ def read_Makefilepy(workpath=''):
                     else:
                         logkeys.append('>>')
 
+                # print labels
                 for i in range(len(targetval)):
                     targetsmk.write("{0:<15} = {1}\n".format(
                         labels[i], targetval[i]))
@@ -431,11 +432,11 @@ def read_Makefilepy(workpath=''):
 
                 for i in range(len(labels)):
                     if labels[i] == 'TARGET':
-                        targetsmk.write("\n$({}): {}\n".format(
-                            labels[i], '$(OBJECTS) $(SLIBS_OBJECTS)'))
+                        targetsmk.write("\n$({}): {} {}\n".format(
+                            labels[i], '$(OBJECTS) $(SLIBS_OBJECTS)', '' if i == 0 else "$("+ labels[i-1] + ")"))
                     else:
-                        targetsmk.write("\n$({}): $({})\n".format(
-                            labels[i], labels[i-1]))
+                        targetsmk.write("\n$({}): {}\n".format(
+                            labels[i], '' if i == 0 else "$("+ labels[i-1] + ")"))
 
                     targetsmk.write(
                         '\t$(call logger-compile,"{}",$@)\n'.format(logkeys[i]))
