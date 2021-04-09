@@ -200,7 +200,10 @@ def readModule(modPath, compilerOpts, goals=None):
             log.debug(
                 f"\'{type(moduleInstance).__name__}\' return empty compiler options")
 
-        modules.append(Module(srcs, incs, flags, modPath, staticLib=staticLib))
+        m = Module(srcs, incs, flags, modPath, staticLib=staticLib)
+        if moduleInstance.module_name:
+            m.module_name = moduleInstance.module_name
+        modules.append(m)
 
     cleanModuleInstance()
 

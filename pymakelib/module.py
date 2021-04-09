@@ -101,6 +101,7 @@ class Module:
         self.incs = incs
         self.flags = flags
         self.filename = filename
+        self.module_name = ""
         self.staticLib = staticLib
         self.orden = 0 if staticLib == None else staticLib.orden
     
@@ -268,6 +269,7 @@ class AbstractModule(ABC):
     def __init__(self, path) -> None:
         super().__init__()
         self.path = path
+        self.module_name = self.__class__.__name__
 
     def init(self):
         """Initialization of module
