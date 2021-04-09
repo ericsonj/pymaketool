@@ -287,7 +287,7 @@ if (USE_EXCLUDE_FOLDERS):
     for allinc in allIncFoldes:
         aux = allinc + '/'
         if not any(aux.startswith(a + "/") for a in includes):
-            if not str(allinc).startswith('Test/ceedling') and not allinc == '.' and not str(allinc).startswith(projSettings['FOLDER_OUT']):
+            if not str(allinc).startswith('Test/ceedling') and not allinc == '.' and not str(allinc).startswith(str(projSettings['FOLDER_OUT'])):
                 auxpath = Path(allinc)
                 if p.match(auxpath.name):
                     listToExclude.append(str(auxpath.parent))
