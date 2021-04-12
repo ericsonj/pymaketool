@@ -31,6 +31,7 @@ import inspect
 from abc import ABC,abstractmethod
 import logging
 from logging import Logger as SysLogger
+from typing import List
 
 FORMATTER = logging.Formatter("%(levelname)-8s%(filename)s:%(lineno)d  %(message)s")
 
@@ -144,6 +145,7 @@ def getProjectInstance() -> AbstractMake:
 from pathlib import Path
 import copy
 from . import prelib as plib
+from . import module
 import sys
 
 class Pymaketool():
@@ -162,5 +164,12 @@ class Pymaketool():
         self.modules = []
         for filename in modulesPaths:
             mod = plib.readModule(filename, copy.deepcopy(self.compilerOpts), None)
+            self.modules.extend(mod)
+        return self.modules
+    
+    def read_modules(self, modulesPaths) -> List[module.AbstractModule]:
+        self.modules = []
+        for filename in modulesPaths:
+            mod = plib.read_module(filename, copy.deepcopy(self.compilerOpts), None)
             self.modules.extend(mod)
         return self.modules

@@ -269,6 +269,7 @@ class AbstractModule(ABC):
     def __init__(self, path) -> None:
         super().__init__()
         self.path = path
+        self.dir = Path(path).parent
         self.module_name = self.__class__.__name__
 
     def init(self):
@@ -303,10 +304,10 @@ class AbstractModule(ABC):
         Returns:
             list: list of sources paths realtive to project
         """        
-        log.debug(f"find srcs in {self.path}")
+        log.debug(f"find srcs in {self.dir}")
         srcs = []
         for ext in src_type:
-            srcs += list(Path(self.path).rglob('*' + ext))
+            srcs += list(Path(self.dir).rglob('*' + ext))
         return srcs
         
     def findIncs(self, inc_type: IncType) -> list:
@@ -320,7 +321,7 @@ class AbstractModule(ABC):
         """        
         incsfiles = []
         for ext in inc_type:
-            incsfiles += list(Path(self.path).rglob('*' + ext))
+            incsfiles += list(Path(self.dir).rglob('*' + ext))
 
         incs = []
         for i in incsfiles:
@@ -350,6 +351,25 @@ class AbstractModule(ABC):
         """        
         pass
 
+class POJOModule(AbstractModule):
+    def __init__(self, path):
+        super().__init__(path)
+        self.includes = []
+        self.sources = []
+        self.compiler_opts = None
+        self.init_resp = None
+
+    def init(self):
+        return self.init_resp
+
+    def getSrcs(self) -> list:
+        return self.includes
+
+    def getIncs(self) -> list:
+        return self.sources
+
+    def getCompilerOpts(self):
+        return self.compiler_opts   
 
 class BasicCModule(AbstractModule):
     """Basic C module, find all sources and includes in module path
@@ -476,7 +496,7 @@ def ModuleClass(clazz):
     modulePath = None
     if m:
         p = Path(m.group('dir'))
-        modulePath = p.parent
+        modulePath = p
 
     obj = clazz(modulePath)
     global ModulesInstances

@@ -26,6 +26,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+
+from typing import List
 import sys
 from pathlib import Path
 import importlib.util
@@ -33,7 +36,7 @@ from . import preconts as K
 from . import Define as D
 from .module import ModuleHandle
 from .module import CompilerOptions
-from .module import Module, getModuleInstance, cleanModuleInstance
+from .module import Module, getModuleInstance, cleanModuleInstance, AbstractModule, POJOModule
 from .module import StaticLibrary
 from . import getProjectInstance
 from . import Logger
@@ -114,6 +117,31 @@ def reafGenHeader(headerpath):
     sys.stdout = open(outfile, 'w') # Something here that provides a write method.
     lib.loader.exec_module(mod)
     sys.stdout = stdout_
+
+
+def read_module(module_path: Path, compiler_opts, goals=None) -> List[AbstractModule]:
+    lib = importlib.util.spec_from_file_location(str(module_path), str(module_path))
+    mod = importlib.util.module_from_spec(lib)
+    log.debug(f"exec module {mod.__name__}")
+    lib.loader.exec_module(mod)
+    
+    moduleInstances = getModuleInstance()
+    modules = []
+
+    if not moduleInstances:
+        modHandle = ModuleHandle(module_path.parent, compiler_opts, goals)
+        m = POJOModule(module_path)
+        m.init_resp = wprInit(mod, modHandle)
+        m.includes = wprGetIncs(mod, modHandle)
+        m.sources = wprGetSrcs(mod, modHandle)
+        m.compiler_opts = wprGetCompilerOpts(mod, modHandle)
+        modules.append(m)
+    else:
+        modules.extend(getModuleInstance())
+
+    cleanModuleInstance()
+    
+    return modules
 
 
 def readModule(modPath, compilerOpts, goals=None):
