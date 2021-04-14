@@ -133,8 +133,7 @@ class MakeGenerator(Generator):
             for src in srcs:
                 if isstatic:
                     objs = str(src).replace('.c', '.o').replace('.s', '.o')
-                    mkkey = self.module.name.upper()
-                    outputObj = '$({}_OUTPUT)/'.format(mkkey) + str(objs)
+                    outputObj = '$({}_OUTPUT)/'.format(self.module.key) + str(objs)
                     self.write("{} : CFLAGS = {}\n".format(str(outputObj), self.compiler_opts2str(comp_opts)))
                 else:
                     objs = str(src).replace('.cpp', '.o')
@@ -149,30 +148,27 @@ class MakeGenerator(Generator):
         mod: StaticLibraryModule = self.module
         log.debug(f"module \'{mod.path}\' static library name {mod.name}")
         log.debug(f"module \'{mod.path}\' static output directory {mod.output_dir}")
-        mkkey = mod.name.upper()
-        self.write('{}_NAME = {}\n'.format(mkkey, mod.name))
-        self.write('{}_OUTPUT = {}\n'.format(mkkey, str(mod.output_dir)))
+        self.write('{}_NAME = {}\n'.format(mod.key, mod.name))
+        self.write('{}_OUTPUT = {}\n'.format(mod.key, str(mod.output_dir)))
         library = mod.output_dir / Path('lib'+mod.name+'.a')
-        self.write('{}_AR = {}\n'.format(mkkey, str(library)))
+        self.write('{}_AR = {}\n'.format(mod.key, str(library)))
         self.write('\n')
 
     def write_staticlib_rules(self):
         mod: StaticLibraryModule = self.module
-        mkkey = mod.name.upper()
-        self.write('{0}'.format(mod.lib_objs))
-        self.write('\n\n' if mod.lib_objs else '')
-        self.write('{}'.format(mod.lib_objs_compile))
-        self.write('\n\n' if mod.lib_objs_compile else '')
-        self.write('{}\n'.format(mod.lib_compile))
+        self.write('{0}'.format(mod.objects))
+        self.write('\n\n' if mod.objects else '')
+        self.write('{}'.format(mod.rule))
+        self.write('\n\n' if mod.rule else '')
+        self.write('{}\n'.format(mod.command))
         self.write('\n\n')
-        self.write('SLIBS_NAMES += {}\n'.format(mod.lib_linked))
+        self.write('SLIBS_NAMES += {}\n'.format(mod.linker))
         self.write('SLIBS_OBJECTS += {}\n'.format(mod.library))
         if mod.rebuild:
             self.write('\n')
             for src in mod.getSrcs():
                 obj = str(src).replace('.c', '.o').replace('.s', '.o')
-                mkkey = mod.name.upper()
-                outputObj = '$({}_OUTPUT)/'.format(mkkey) + str(obj)
+                outputObj = '$({}_OUTPUT)/'.format(mod.key) + str(obj)
                 self.write("{} : .FORCE\n".format(outputObj))
             self.write('\n')
 
@@ -186,19 +182,3 @@ class MakeGenerator(Generator):
         if self.isstaticlib():
             self.write_staticlib_rules()
         return ''.join(self.output)
-
-
-# class MakeGeneratorStaticLib(MakeGenerator):
-
-#     def write_srcs(self):
-#         prefix = self.module.module_name.upper() + "_"
-#         srcs = self.module.getSrcs()
-#         for src in srcs:
-#             if str(src).endswith('.c'):
-#                 self.write("{}CSRC += {}\n".format(prefix,src))
-#             elif str(src).endswith('.cpp'):
-#                 self.write("{}CXXSRC += {}\n".format(prefix,src))
-#             elif str(src).endswith('.s'):
-#                 self.write("{}ASSRC += {}\n".format(prefix, src))
-#         self.write('\n') if srcs else None
-

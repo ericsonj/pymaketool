@@ -355,20 +355,18 @@ class StaticLibraryModule(AbstractModule):
 
     def __init__(self, path) -> None:
         super().__init__(path)
-        self.name = self.__class__.__name__
-        self.output_dir = ""
-        self.get_config()
-        self.orden = 1
-        self.rebuild = True
-        self.mkkey = self.name.upper()
+        self.name = self.get_name()
         self.lib_name = 'lib' + self.name + '.a'
+        self.output_dir = Path(self.get_output_dir())
+        self.orden = self.get_order()
+        self.rebuild = self.get_rebuild()
+        self.key = self.name.upper()
         self.library = self.output_dir / Path(self.lib_name)
-        self.lib_objs = f"{self.mkkey}_OBJECTS = $({self.mkkey}_CSRC:%.c=$({self.mkkey}_OUTPUT)/%.o) $({self.mkkey}_CSRC:%.s=$({self.mkkey}_OUTPUT)/%.o)"
-        self.lib_objs_compile = f"$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{self.library}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
-        self.lib_compile = f"$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))"
-        self.lib_linked_opts = None
-        self.lib_linked = "-L{0} -l{1} {2}".format(self.output_dir, self.name, self._get_str_linked_opts(self.lib_linked_opts))
-        
+        self.objects = self.get_objects(self.key)
+        self.rule = self.get_rule(self.key)
+        self.command = self.get_command(self.key)
+        self.linker = self.get_linker(self.key)
+
     def _get_str_linked_opts(self, opts):
         if isinstance(opts, str):
             return opts
@@ -378,8 +376,34 @@ class StaticLibraryModule(AbstractModule):
             return ""
 
     @abstractmethod
-    def get_config(self):
+    def get_name(self) -> str:
         pass
+
+    @abstractmethod
+    def get_output_dir(self) -> str:
+        pass
+
+    def get_linker_opts(self) -> str:
+        return None
+
+    def get_objects(self, key) -> str:
+        return  f"{key}_OBJECTS = $({key}_CSRC:%.c=$({key}_OUTPUT)/%.o) $({key}_CSRC:%.s=$({key}_OUTPUT)/%.o)"
+
+    def get_rule(self, key) -> str:
+        return  f"$({key}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{key}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
+
+    def get_command(self, key) -> str:
+        return  f"$({key}_AR): $({key}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({key}_OBJECTS))"
+
+    def get_linker(self, key) -> str:
+        return "-L{0} -l{1}".format(self.output_dir, self.name, self._get_str_linked_opts(self.get_linker_opts()))
+
+    def get_order(self):
+        return 1
+
+    def get_rebuild(self):
+        return False
+
 
 class POJOModule(AbstractModule):
     def __init__(self, path):
