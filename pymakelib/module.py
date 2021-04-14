@@ -351,6 +351,36 @@ class AbstractModule(ABC):
         """        
         pass
 
+class StaticLibraryModule(AbstractModule):
+
+    def __init__(self, path) -> None:
+        super().__init__(path)
+        self.name = self.__class__.__name__
+        self.output_dir = ""
+        self.get_config()
+        self.orden = 1
+        self.rebuild = True
+        self.mkkey = self.name.upper()
+        self.lib_name = 'lib' + self.name + '.a'
+        self.library = self.output_dir / Path(self.lib_name)
+        self.lib_objs = f"{self.mkkey}_OBJECTS = $({self.mkkey}_CSRC:%.c=$({self.mkkey}_OUTPUT)/%.o) $({self.mkkey}_CSRC:%.s=$({self.mkkey}_OUTPUT)/%.o)"
+        self.lib_objs_compile = f"$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{self.library}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
+        self.lib_compile = f"$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))"
+        self.lib_linked_opts = None
+        self.lib_linked = "-L{0} -l{1} {2}".format(self.output_dir, self.name, self._get_str_linked_opts(self.lib_linked_opts))
+        
+    def _get_str_linked_opts(self, opts):
+        if isinstance(opts, str):
+            return opts
+        elif isinstance(opts, list):
+            return ' '.join(opts)
+        else:
+            return ""
+
+    @abstractmethod
+    def get_config(self):
+        pass
+
 class POJOModule(AbstractModule):
     def __init__(self, path):
         super().__init__(path)

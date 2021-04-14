@@ -10,4 +10,4 @@ print(modules_paths)
 modules = p.read_modules(modules_paths)
 for m in modules:
     g = generator.MakeGenerator(m, p)
-    print(g.get_makefile())
+    print(g.process())
