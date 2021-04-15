@@ -51,11 +51,12 @@ class Generator(ABC):
 
 class MakeGenerator(Generator):
 
-    def __init__(self, module: AbstractModule, project: Pymaketool):
+    def __init__(self, module, project: Pymaketool):
         super().__init__(module, project)
-
-    def isstaticlib(self):
-        return isinstance(self.module, StaticLibraryModule)
+        self.isstaticlib = isinstance(module, StaticLibraryModule)
+        if self.isstaticlib:
+            mod:StaticLibraryModule = module
+            mod.decorate_module()
 
     def write(self, value):
         self.output.append(value)
@@ -105,7 +106,7 @@ class MakeGenerator(Generator):
 
     def write_srcs(self):
         prefixSrcs = ""
-        if self.isstaticlib():
+        if self.isstaticlib:
             prefixSrcs = self.module.name.upper() + "_"
         srcs = self.module.getSrcs()
         for src in srcs:
@@ -129,7 +130,7 @@ class MakeGenerator(Generator):
         comp_opts = self.module.getCompilerOpts()
         if comp_opts:
             srcs = self.module.getSrcs()
-            isstatic = self.isstaticlib()
+            isstatic = self.isstaticlib
             for src in srcs:
                 if isstatic:
                     objs = str(src).replace('.c', '.o').replace('.s', '.o')
@@ -174,11 +175,11 @@ class MakeGenerator(Generator):
 
     def process(self) -> str:
         self.write_header()
-        if self.isstaticlib():
+        if self.isstaticlib:
             self.write_staticlib_def()
         self.write_srcs()
         self.write_incs()
         self.write_compiler_opts()
-        if self.isstaticlib():
+        if self.isstaticlib:
             self.write_staticlib_rules()
         return ''.join(self.output)

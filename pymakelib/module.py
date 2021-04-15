@@ -33,7 +33,7 @@ import copy
 from pathlib import Path
 from . import preconts as K
 from . import git
-from abc import ABC,abstractmethod
+from abc import ABC,abstractmethod, ABCMeta
 from . import Logger
 
 log = Logger.getLogger()
@@ -266,11 +266,14 @@ class AbstractModule(ABC):
     Attributes:
         path (str): path of module
     """    
-    def __init__(self, path) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.path = path
-        self.dir = Path(path).parent
-        self.module_name = self.__class__.__name__
+        self.module_name = self.get_module_name()
+        self.path = f"{self.__module__}.{self.module_name}"
+        self.dir = Path(self.path).parent
+
+    def get_module_name(self):
+        return self.__class__.__name__
 
     def init(self):
         """Initialization of module
@@ -351,10 +354,16 @@ class AbstractModule(ABC):
         """        
         pass
 
-class StaticLibraryModule(AbstractModule):
+class StaticLibraryModule(metaclass=ABCMeta):
 
-    def __init__(self, path) -> None:
-        super().__init__(path)
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return (hasattr(subclass, 'get_name') and 
+                callable(subclass.get_name) and
+                hasattr(subclass, 'get_output_dir') and 
+                callable(subclass.get_output_dir))
+
+    def decorate_module(self):
         self.name = self.get_name()
         self.lib_name = 'lib' + self.name + '.a'
         self.output_dir = Path(self.get_output_dir())
@@ -377,11 +386,11 @@ class StaticLibraryModule(AbstractModule):
 
     @abstractmethod
     def get_name(self) -> str:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def get_output_dir(self) -> str:
-        pass
+        raise NotImplementedError
 
     def get_linker_opts(self) -> str:
         return None
@@ -431,8 +440,8 @@ class BasicCModule(AbstractModule):
     Args:
         path (str): path to module, _mk.py file.
     """
-    def __init__(self, path):
-        super().__init__(path)
+    def __init__(self):
+        super().__init__()
 
     def getSrcs(self) -> list:
         """Return list with all sources in module path
@@ -462,8 +471,8 @@ class ExternalModule(AbstractModule):
     Raises:
             AttributeError: path is not valid
     """
-    def __init__(self, path):
-        super().__init__(path)
+    def __init__(self):
+        super().__init__()
         try:
             modPath = self.getModulePath()
             if not modPath.endswith("_mk.py"):
@@ -544,15 +553,16 @@ def ModuleClass(clazz):
     else:
         log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
 
-    classdir = str(clazz)
-    log.debug(f"class dir {classdir}")
-    m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
-    modulePath = None
-    if m:
-        p = Path(m.group('dir'))
-        modulePath = p
+    # classdir = str(clazz)
+    # log.debug(f"class dir {classdir}")
+    # m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
+    # modulePath = None
+    # if m:
+    #     p = Path(m.group('dir'))
+    #     modulePath = p
+    # modulePath = f"{clazz.__module__}.{clazz.__name__}"
 
-    obj = clazz(modulePath)
+    obj = clazz()
     global ModulesInstances
     try:
         _ = ModulesInstances
@@ -561,7 +571,7 @@ def ModuleClass(clazz):
         ModulesInstances = []
 
     
-    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {modulePath}")
+    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {clazz.__module__}")
     ModulesInstances.append(obj)
 
 
