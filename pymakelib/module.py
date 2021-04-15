@@ -269,11 +269,24 @@ class AbstractModule(ABC):
     def __init__(self) -> None:
         super().__init__()
         self.module_name = self.get_module_name()
-        self.path = f"{self.__module__}.{self.module_name}"
+        self.path = self.get_path()
         self.dir = Path(self.path).parent
 
-    def get_module_name(self):
+    def get_module_name(self) -> str:
+        """Module name
+
+        Returns:
+            str: name of module (default: class name)
+        """
         return self.__class__.__name__
+
+    def get_path(self):
+        """Get path of module in filesystem
+
+        Returns:
+            str: path (default: self.__module__.module_name)
+        """
+        return f"{self.__module__}.{self.module_name}"
 
     def init(self):
         """Initialization of module
@@ -358,15 +371,15 @@ class StaticLibraryModule(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'get_name') and 
-                callable(subclass.get_name) and
-                hasattr(subclass, 'get_output_dir') and 
-                callable(subclass.get_output_dir))
+        return (hasattr(subclass, 'get_lib_name') and 
+                callable(subclass.get_lib_name) and
+                hasattr(subclass, 'get_lib_outputdir') and 
+                callable(subclass.get_lib_outputdir))
 
     def decorate_module(self):
-        self.name = self.get_name()
+        self.name = self.get_lib_name()
         self.lib_name = 'lib' + self.name + '.a'
-        self.output_dir = Path(self.get_output_dir())
+        self.output_dir = Path(self.get_lib_outputdir())
         self.orden = self.get_order()
         self.rebuild = self.get_rebuild()
         self.key = self.name.upper()
@@ -385,11 +398,11 @@ class StaticLibraryModule(metaclass=ABCMeta):
             return ""
 
     @abstractmethod
-    def get_name(self) -> str:
+    def get_lib_name(self) -> str:
         raise NotImplementedError
 
     @abstractmethod
-    def get_output_dir(self) -> str:
+    def get_lib_outputdir(self) -> str:
         raise NotImplementedError
 
     def get_linker_opts(self) -> str:
