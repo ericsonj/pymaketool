@@ -99,3 +99,19 @@ def getCompilerOpts() ->  dict:
         dict: General project compiler options
     """
     return getSettings()['COMPILER_OTPS']
+
+
+def get_setting_by_elem(element):
+    return getSettings()[element]
+
+
+def get_vars():
+    return get_setting_by_elem('PROJECT_SETTINGS')
+
+
+def get(varname):
+    return get_vars()[varname]
+
+
+def get_base_build():
+    return get('FOLDER_OUT')

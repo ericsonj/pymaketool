@@ -1,4 +1,5 @@
 from pymakelib import module
+from pymakelib import project
 import inspect
 import logging
 import sys
