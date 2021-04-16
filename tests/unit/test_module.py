@@ -19,8 +19,8 @@ class TestModule(unittest.TestCase):
         class ModTest(module.BasicCModule):
             pass
         
-        mod = ModTest('mod')
-        self.assertEqual('mod', mod.path)
+        mod = ModTest()
+        self.assertEqual('ModTest', mod.module_name)
         self.assertIsInstance(mod.getSrcs(), list)
         self.assertIsInstance(mod.getIncs(), list)
 
@@ -38,8 +38,8 @@ class TestModule(unittest.TestCase):
                     'mod/inc/main.h'
                 ]
 
-        mod = ModTest('mod')
-        self.assertEqual('mod', mod.path)
+        mod = ModTest()
+        self.assertEqual('ModTest', mod.module_name)
         self.assertIsInstance(mod.getSrcs(), list)
         self.assertIsInstance(mod.getIncs(), list)
 
