@@ -35,6 +35,10 @@ def confARMeabiGCC(binLocation='', prefix='arm-none-eabi-', extIncludes=[]):
     return confGCC(binLocation, prefix, extIncludes)
 
 
+def get_c_linux(bin_location='', ext_incs=[]) -> dict:
+    return get_gcc_linux(bin_location, ext_incs)
+
+
 def get_gcc_linux(bin_location='', ext_incs=[]) -> dict:
     """Get dictionary with gcc compiler set for linux   
 
@@ -48,15 +52,32 @@ def get_gcc_linux(bin_location='', ext_incs=[]) -> dict:
     return confLinuxGCC(binLocation=bin_location, extIncludes=ext_incs)
 
 
+def get_cpp_linux(bin_location='', ext_incs=[]) -> dict:
+    return get_gpp_linux(bin_location, ext_incs)
+
+
+def get_gpp_linux(bin_location='', ext_incs=[]) -> dict:
+    """Get dictionary with g++ compiler set for linux   
+
+    Args:
+        bin_location (str, optional): location of toolchain. Defaults to ''.
+        ext_incs (list, optional): list of external includes. Defaults to [].
+
+    Returns:
+        dict: set of gcc compiler e.g. {'CC': 'g++' ... }
+    """    
+    return confGCC(binLocation=bin_location, extIncludes=ext_incs, iscpp=True)
+
+
 def confLinuxGCC(binLocation='', extIncludes=[]):
     return confGCC(binLocation, '', extIncludes)
 
 
-def confGCC(binLocation='', prefix='', extIncludes=[]):
+def confGCC(binLocation='', prefix='', extIncludes=[], iscpp=False):
     binpath = Path(binLocation)
     cmd_gcc = str(binpath / (prefix + 'gcc'))
     cmd_gxx = str(binpath / (prefix + 'g++'))
-    cmd_ld = str(binpath / (prefix + 'gcc'))
+    cmd_ld = str(binpath / (prefix + ('g++' if iscpp else 'gcc')))
     cmd_ar = str(binpath / (prefix + 'ar'))
     cmd_as = str(binpath / (prefix + 'as'))
     cmd_objcopy = str(binpath / (prefix + 'objcopy'))

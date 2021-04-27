@@ -49,7 +49,7 @@ log = Logger.getLogger()
 parser = argparse.ArgumentParser()
 parser.add_argument('goal', type=str, help='Makefile command goal', default=None, nargs='?')
 parser.add_argument('--init', type=str, help='initialize project', const=os.path.basename(os.getcwd()), dest='project_name', nargs='?')
-parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0.2')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s 2.0.3')
 args = parser.parse_args()
 
 goal = args.goal
@@ -153,20 +153,22 @@ def getLineSeparator(key: str, num: int):
     return header
 
 log.debug('**load modules**')
+modules = sorted(modules, key=lambda mod: mod.orden)
 for mod in modules:
     if mod.isEmpty():
         log.debug(f"module \'{mod.filename}\' is empty, module skiped*")
         continue
-
-    print('Module: {}'.format(mod.filename))
-    log.info('read module \'{}\''.format(mod.filename))
+    
+    mod_filename = f"{mod.filename}:{mod.module_name}"
+    print('Module: {}'.format(mod_filename))
+    log.info('read module \'{}\''.format(mod_filename))
     srcsfile.write("{}\n".format(getLineSeparator('#', 52)))
-    srcsfile.write("#{0:^50}#\n".format(str(mod.filename)))
+    srcsfile.write("#{0:^50}#\n".format(str(mod_filename)))
     srcsfile.write("{}\n".format(getLineSeparator('#', 52)))
 
     if mod.staticLib:
-        log.debug(f"module \'{mod.filename}\' static library name {mod.staticLib.name}")
-        log.debug(f"module \'{mod.filename}\' static output directory {mod.staticLib.outputDir}")
+        log.debug(f"module \'{mod_filename}\' static library name {mod.staticLib.name}")
+        log.debug(f"module \'{mod_filename}\' static output directory {mod.staticLib.outputDir}")
         mkkey = mod.staticLib.name.upper()
         srcsfile.write('{}_NAME = {}\n'.format(mkkey, mod.staticLib.name))
         srcsfile.write('{}_OUTPUT = {}\n'.format(mkkey, str(mod.staticLib.outputDir)))
@@ -214,21 +216,22 @@ for mod in modules:
                 objs = str(src).replace('.cpp', '.o')
                 objs = objs.replace('.c', '.o')
                 objs = objs.replace('.s', '.o')
-                srcsfile.write("{} : CFLAGS = {}\n".format(
-                    projSettings['FOLDER_OUT'] / str(objs), plib.compilerOptsByModuleToLine(mod.flags)))
+                ouputobj = Path(str(projSettings['FOLDER_OUT']) + '/' + str(objs))
+                log.debug(ouputobj)
+                srcsfile.write("{} : CFLAGS = {}\n".format(str(ouputobj), plib.compilerOptsByModuleToLine(mod.flags)))
 
     srcsfile.write('\n')
  
     if mod.staticLib:
         mkkey = mod.staticLib.name.upper()
-        srcsfile.write('{0}_OBJECTS = $({0}_CSRC:%.c=$({0}_OUTPUT)/%.o) $({0}_CSRC:%.s=$({0}_OUTPUT)/%.o)\n'.format(mkkey))
-        srcsfile.write('\n')
-        srcsfile.write('$({0}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,"CC",\"{1}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<\n'.format(mkkey, library))
-        srcsfile.write('\n')
-        srcsfile.write('$({0}_AR): $({0}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $(filter %.o,$({0}_OBJECTS))'.format(mkkey))
+        srcsfile.write('{0}'.format(mod.staticLib.lib_objs))
+        srcsfile.write('\n\n' if mod.staticLib.lib_objs else '')
+        srcsfile.write('{}'.format(mod.staticLib.lib_objs_compile))
+        srcsfile.write('\n\n' if mod.staticLib.lib_objs_compile else '')
+        srcsfile.write('{}\n'.format(mod.staticLib.lib_compile))
         srcsfile.write('\n\n')
-        srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.name))
-        srcsfile.write('SLIBS_OBJECTS += {}\n'.format(library))
+        srcsfile.write('SLIBS_NAMES += {}\n'.format(mod.staticLib.lib_linked))
+        srcsfile.write('SLIBS_OBJECTS += {}\n'.format(mod.staticLib.library))
         if mod.staticLib.rebuild:
             srcsfile.write('\n')
             for src in mod.srcs:
@@ -284,7 +287,7 @@ if (USE_EXCLUDE_FOLDERS):
     for allinc in allIncFoldes:
         aux = allinc + '/'
         if not any(aux.startswith(a + "/") for a in includes):
-            if not str(allinc).startswith('Test/ceedling') and not allinc == '.':
+            if not str(allinc).startswith('Test/ceedling') and not allinc == '.' and not str(allinc).startswith(str(projSettings['FOLDER_OUT'])):
                 auxpath = Path(allinc)
                 if p.match(auxpath.name):
                     listToExclude.append(str(auxpath.parent))

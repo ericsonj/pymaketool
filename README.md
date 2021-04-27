@@ -36,6 +36,33 @@ Install pymaketool:
 $ pip3 install pymaketool 
 ```
 
+Create new basic C project.
+```bash
+$ pynewproject CLinuxGCC
+  (author) Your name: Ericson
+  (project_name) Your project name: hello
+
+$ cd hello
+
+hello$ make clean
+
+hello$ make
+
+hello$ ./Release/hello
+```
+Note: this example use **EclipseAddon** by default, pymaketool generate files *.setting/language.settings.xml* and *.cproject*.
+
+## Quick start in Docker
+
+Pull imagen and run container:
+```bash
+$ docker pull ericsonjoseph/pymaketool
+
+$ docker run -it ericsonjoseph/pymaketool
+
+ubuntu@$ pynewproject CLinuxGCC
+```
+
 ## Quick Info
 
  **pymaketool** process modules of code like objects. These objects ware define by files **_mk.py*. With Python you can code how to discover and get source files and include paths, e.g.:

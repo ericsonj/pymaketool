@@ -26,6 +26,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+
+from typing import List
 import sys
 from pathlib import Path
 import importlib.util
@@ -33,7 +36,7 @@ from . import preconts as K
 from . import Define as D
 from .module import ModuleHandle
 from .module import CompilerOptions
-from .module import Module, getModuleInstance, cleanModuleInstance
+from .module import Module, getModuleInstance, cleanModuleInstance, AbstractModule, POJOModule
 from .module import StaticLibrary
 from . import getProjectInstance
 from . import Logger
@@ -114,6 +117,31 @@ def reafGenHeader(headerpath):
     sys.stdout = open(outfile, 'w') # Something here that provides a write method.
     lib.loader.exec_module(mod)
     sys.stdout = stdout_
+
+
+def read_module(module_path: Path, compiler_opts, goals=None) -> List[AbstractModule]:
+    lib = importlib.util.spec_from_file_location(str(module_path), str(module_path))
+    mod = importlib.util.module_from_spec(lib)
+    log.debug(f"exec module {mod.__name__}")
+    lib.loader.exec_module(mod)
+    
+    moduleInstances = getModuleInstance()
+    modules = []
+
+    if not moduleInstances:
+        modHandle = ModuleHandle(module_path.parent, compiler_opts, goals)
+        m = POJOModule(module_path)
+        m.init_resp = wprInit(mod, modHandle)
+        m.includes = wprGetIncs(mod, modHandle)
+        m.sources = wprGetSrcs(mod, modHandle)
+        m.compiler_opts = wprGetCompilerOpts(mod, modHandle)
+        modules.append(m)
+    else:
+        modules.extend(getModuleInstance())
+
+    cleanModuleInstance()
+    
+    return modules
 
 
 def readModule(modPath, compilerOpts, goals=None):
@@ -200,7 +228,10 @@ def readModule(modPath, compilerOpts, goals=None):
             log.debug(
                 f"\'{type(moduleInstance).__name__}\' return empty compiler options")
 
-        modules.append(Module(srcs, incs, flags, modPath, staticLib=staticLib))
+        m = Module(srcs, incs, flags, modPath, staticLib=staticLib)
+        if moduleInstance.module_name:
+            m.module_name = moduleInstance.module_name
+        modules.append(m)
 
     cleanModuleInstance()
 
@@ -422,6 +453,7 @@ def read_Makefilepy(workpath=''):
                     else:
                         logkeys.append('>>')
 
+                # print labels
                 for i in range(len(targetval)):
                     targetsmk.write("{0:<15} = {1}\n".format(
                         labels[i], targetval[i]))
@@ -431,11 +463,11 @@ def read_Makefilepy(workpath=''):
 
                 for i in range(len(labels)):
                     if labels[i] == 'TARGET':
-                        targetsmk.write("\n$({}): {}\n".format(
-                            labels[i], '$(OBJECTS) $(SLIBS_OBJECTS)'))
+                        targetsmk.write("\n$({}): {} {}\n".format(
+                            labels[i], '$(OBJECTS) $(SLIBS_OBJECTS)', '' if i == 0 else "$("+ labels[i-1] + ")"))
                     else:
-                        targetsmk.write("\n$({}): $({})\n".format(
-                            labels[i], labels[i-1]))
+                        targetsmk.write("\n$({}): {}\n".format(
+                            labels[i], '' if i == 0 else "$("+ labels[i-1] + ")"))
 
                     targetsmk.write(
                         '\t$(call logger-compile,"{}",$@)\n'.format(logkeys[i]))

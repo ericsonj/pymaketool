@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+from pymakelib import Pymaketool
+from pymakelib import generator
+
+p = Pymaketool()
+
+modules_paths = p.getModulesPaths()
+print(modules_paths)
+modules = p.read_modules(modules_paths)
+for m in modules:
+    g = generator.MakeGenerator(m, p)
+    print(g.process())

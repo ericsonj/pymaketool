@@ -33,7 +33,7 @@ import copy
 from pathlib import Path
 from . import preconts as K
 from . import git
-from abc import ABC,abstractmethod
+from abc import ABC,abstractmethod, ABCMeta
 from . import Logger
 
 log = Logger.getLogger()
@@ -50,10 +50,27 @@ class IncType:
 
 
 class StaticLibrary:
-    def __init__(self, name: str, outputDir: str, rebuild=False):
+    def __init__(self, name: str, outputDir: str, rebuild=False, lib_linked_opts=None, orden=1):
         self.name = name
+        self.orden = orden
         self.outputDir = Path(outputDir)
         self.rebuild = rebuild
+        self.mkkey = self.name.upper()
+        self.lib_name = 'lib' + self.name + '.a'
+        self.library = self.outputDir / Path(self.lib_name)
+        self.lib_objs = f"{self.mkkey}_OBJECTS = $({self.mkkey}_CSRC:%.c=$({self.mkkey}_OUTPUT)/%.o) $({self.mkkey}_CSRC:%.s=$({self.mkkey}_OUTPUT)/%.o)"
+        self.lib_objs_compile = f"$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{self.library}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
+        self.lib_compile = f"$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))"
+        self.lib_linked_opts = lib_linked_opts
+        self.lib_linked = "-L{0} -l{1} {2}".format(self.outputDir, self.name, self._get_str_linked_opts(self.lib_linked_opts))
+
+    def _get_str_linked_opts(self, opts):
+        if isinstance(opts, str):
+            return opts
+        elif isinstance(opts, list):
+            return ' '.join(opts)
+        else:
+            return ""
 
     def setRebuild(self, rebuild: bool):
         self.rebuild = rebuild
@@ -84,7 +101,9 @@ class Module:
         self.incs = incs
         self.flags = flags
         self.filename = filename
+        self.module_name = ""
         self.staticLib = staticLib
+        self.orden = 0 if staticLib == None else staticLib.orden
     
     def isEmpty(self):
         if not self.srcs and not self.incs and not self.staticLib:
@@ -247,9 +266,27 @@ class AbstractModule(ABC):
     Attributes:
         path (str): path of module
     """    
-    def __init__(self, path) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.path = path
+        self.module_name = self.get_module_name()
+        self.path = self.get_path()
+        self.dir = Path(self.path).parent
+
+    def get_module_name(self) -> str:
+        """Module name
+
+        Returns:
+            str: name of module (default: class name)
+        """
+        return self.__class__.__name__
+
+    def get_path(self):
+        """Get path of module in filesystem
+
+        Returns:
+            str: path (default: self.__module__.module_name)
+        """
+        return f"{self.__module__}.{self.module_name}"
 
     def init(self):
         """Initialization of module
@@ -283,10 +320,10 @@ class AbstractModule(ABC):
         Returns:
             list: list of sources paths realtive to project
         """        
-        log.debug(f"find srcs in {self.path}")
+        log.debug(f"find srcs in {self.dir}")
         srcs = []
         for ext in src_type:
-            srcs += list(Path(self.path).rglob('*' + ext))
+            srcs += list(Path(self.dir).rglob('*' + ext))
         return srcs
         
     def findIncs(self, inc_type: IncType) -> list:
@@ -300,7 +337,7 @@ class AbstractModule(ABC):
         """        
         incsfiles = []
         for ext in inc_type:
-            incsfiles += list(Path(self.path).rglob('*' + ext))
+            incsfiles += list(Path(self.dir).rglob('*' + ext))
 
         incs = []
         for i in incsfiles:
@@ -330,6 +367,85 @@ class AbstractModule(ABC):
         """        
         pass
 
+class StaticLibraryModule(metaclass=ABCMeta):
+
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return (hasattr(subclass, 'get_lib_name') and 
+                callable(subclass.get_lib_name) and
+                hasattr(subclass, 'get_lib_outputdir') and 
+                callable(subclass.get_lib_outputdir))
+
+    def decorate_module(self):
+        self.name = self.get_lib_name()
+        self.lib_name = 'lib' + self.name + '.a'
+        self.output_dir = Path(self.get_lib_outputdir())
+        self.orden = self.get_order()
+        self.rebuild = self.get_rebuild()
+        self.key = self.name.upper()
+        self.library = self.output_dir / Path(self.lib_name)
+        self.objects = self.get_objects(self.key)
+        self.rule = self.get_rule(self.key)
+        self.command = self.get_command(self.key)
+        self.linker = self.get_linker(self.key)
+
+    def _get_str_linked_opts(self, opts):
+        if isinstance(opts, str):
+            return opts
+        elif isinstance(opts, list):
+            return ' '.join(opts)
+        else:
+            return ""
+
+    @abstractmethod
+    def get_lib_name(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_lib_outputdir(self) -> str:
+        raise NotImplementedError
+
+    def get_linker_opts(self) -> str:
+        return None
+
+    def get_objects(self, key) -> str:
+        return  f"{key}_OBJECTS = $({key}_CSRC:%.c=$({key}_OUTPUT)/%.o) $({key}_CSRC:%.s=$({key}_OUTPUT)/%.o)"
+
+    def get_rule(self, key) -> str:
+        return  f"$({key}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{key}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
+
+    def get_command(self, key) -> str:
+        return  f"$({key}_AR): $({key}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({key}_OBJECTS))"
+
+    def get_linker(self, key) -> str:
+        return "-L{0} -l{1}".format(self.output_dir, self.name, self._get_str_linked_opts(self.get_linker_opts()))
+
+    def get_order(self):
+        return 1
+
+    def get_rebuild(self):
+        return False
+
+
+class POJOModule(AbstractModule):
+    def __init__(self, path):
+        super().__init__(path)
+        self.includes = []
+        self.sources = []
+        self.compiler_opts = None
+        self.init_resp = None
+
+    def init(self):
+        return self.init_resp
+
+    def getSrcs(self) -> list:
+        return self.includes
+
+    def getIncs(self) -> list:
+        return self.sources
+
+    def getCompilerOpts(self):
+        return self.compiler_opts   
 
 class BasicCModule(AbstractModule):
     """Basic C module, find all sources and includes in module path
@@ -337,8 +453,8 @@ class BasicCModule(AbstractModule):
     Args:
         path (str): path to module, _mk.py file.
     """
-    def __init__(self, path):
-        super().__init__(path)
+    def __init__(self):
+        super().__init__()
 
     def getSrcs(self) -> list:
         """Return list with all sources in module path
@@ -368,8 +484,8 @@ class ExternalModule(AbstractModule):
     Raises:
             AttributeError: path is not valid
     """
-    def __init__(self, path):
-        super().__init__(path)
+    def __init__(self):
+        super().__init__()
         try:
             modPath = self.getModulePath()
             if not modPath.endswith("_mk.py"):
@@ -450,15 +566,16 @@ def ModuleClass(clazz):
     else:
         log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
 
-    classdir = str(clazz)
-    log.debug(f"class dir {classdir}")
-    m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
-    modulePath = None
-    if m:
-        p = Path(m.group('dir'))
-        modulePath = p.parent
+    # classdir = str(clazz)
+    # log.debug(f"class dir {classdir}")
+    # m = re.search(r"<class \'(?P<dir>[a-zA-Z\./_-]+)\'>", classdir)
+    # modulePath = None
+    # if m:
+    #     p = Path(m.group('dir'))
+    #     modulePath = p
+    # modulePath = f"{clazz.__module__}.{clazz.__name__}"
 
-    obj = clazz(modulePath)
+    obj = clazz()
     global ModulesInstances
     try:
         _ = ModulesInstances
@@ -467,7 +584,7 @@ def ModuleClass(clazz):
         ModulesInstances = []
 
     
-    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {modulePath}")
+    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {clazz.__module__}")
     ModulesInstances.append(obj)
 
 
