@@ -28,6 +28,7 @@
 
 
 
+from . import AbstractMake
 from typing import List
 import sys
 from pathlib import Path
@@ -284,6 +285,26 @@ def compilerOptsByModuleToLine(compOpts):
     rmstr = ' '.join(rmstr.split())
     log.debug(f"compiler options: {rmstr}")
     return rmstr
+
+
+def read_Makefilepy_obj(workpath='') -> AbstractMake:
+    makefilepy_path = workpath + K.MAKEFILE_PY
+    lib = importlib.util.spec_from_file_location(makefilepy_path, makefilepy_path)
+    mod = importlib.util.module_from_spec(lib)
+    lib.loader.exec_module(mod)
+    projectInstance = getProjectInstance()
+    if not projectInstance:
+        class bproject(AbstractMake):
+            def getProjectSettings(self, **kwargs) -> dict:
+                return getattr(mod, K.MK_F_GETPROJECTSETTINGS)()
+            def getCompilerSet(self, **kwargs) -> dict:
+                return getattr(mod, K.MK_F_GETCOMPILERSET)()
+            def getCompilerOpts(self, **kwargs) -> dict:
+                return getattr(mod, K.MK_F_GETCOMPILEROPTS)()
+            def getLinkerOpts(self, **kwargs) -> dict:
+                return getattr(mod, K.MK_F_GETLINKEROPTS)()
+        projectInstance = bproject()
+    return projectInstance
 
 
 def read_Makefilepy(workpath=''):

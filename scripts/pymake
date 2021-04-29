@@ -9,5 +9,11 @@ modules_paths = p.getModulesPaths()
 print(modules_paths)
 modules = p.read_modules(modules_paths)
 for m in modules:
-    g = generator.MakeGenerator(m, p)
+    g = generator.SrcsGenerator(m, p)
     print(g.process())
+
+targes = generator.TargetsGenerator(p)
+print(targes.process())
+
+vars = generator.VarsGenerator(p)
+print(vars.process())
