@@ -6,7 +6,6 @@ class VSCodeAddon(AddonAbstract):
 
     def init(self):
         newfile = False
-        c_cpp_prop = None
         try:
             c_cpp_prop = Path(".vscode/c_cpp_properties.json").mkdir(parents=True, exist_ok=True)
             newfile = True
@@ -20,7 +19,7 @@ class VSCodeAddon(AddonAbstract):
             json_prop = _tmp_cpp.read()
             _tmp_cpp.close()
             
-        file_c_cpp = open(c_cpp_prop, "w")
+        file_c_cpp = open(str(c_cpp_prop), "w")
         if newfile:
             prop = self.__create_basic_c_cpp_prop()
         else:
