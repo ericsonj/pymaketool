@@ -6,13 +6,15 @@ class VSCodeAddon(AddonAbstract):
 
     def init(self):
         newfile = False
-        try:
-            c_cpp_prop = Path(".vscode/c_cpp_properties.json").mkdir(parents=True, exist_ok=True)
-            newfile = True
-        except FileExistsError:
-            c_cpp_prop = Path(".vscode/c_cpp_properties.json")
+        c_cpp_prop = ".vscode/c_cpp_properties.json"
+        aux = Path(c_cpp_prop)
+        if aux.exists():
             pass
-
+        else:
+            Path(".vscode").mkdir(exist_ok=True)
+            c_cpp_prop = str(aux)
+            newfile = True
+            
         json_prop = None
         if not newfile:
             _tmp_cpp = open(c_cpp_prop)
