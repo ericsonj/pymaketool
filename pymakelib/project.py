@@ -99,3 +99,12 @@ def getCompilerOpts() ->  dict:
         dict: General project compiler options
     """
     return getSettings()['COMPILER_OTPS']
+
+
+def get_base_build() -> str:
+    """Get base build folder
+
+    Returns:
+        str: base build folder
+    """
+    return getSettings()['PROJECT_SETTINGS']['FOLDER_OUT']

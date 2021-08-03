@@ -45,11 +45,72 @@ class Generator(ABC):
         self.project = project
         self.output = []
 
+    def write(self, value):
+        self.output.append(value)
+
     @abstractmethod
     def process(self) -> str:
         pass
 
-class MakeGenerator(Generator):
+
+class VarsGenerator(Generator):
+
+    def __init__(self, project: Pymaketool):
+        super().__init__(None, project)
+
+    def write_cflags(self):
+        compOpts = self.project.compilerOpts
+        if isinstance(compOpts, dict):
+            for key in compOpts:
+                self.write('# {0}\n'.format(key))
+                if (key == 'MACROS' and isinstance(compOpts[key], dict)):
+                    self.write(
+                        'COMPILER_FLAGS += {}\n'.format(macrosDictToString(compOpts[key])))
+                else:
+                    self.write('COMPILER_FLAGS += {}\n'.format(' '.join(compOpts[key])))
+            self.write('\n')
+        elif isinstance(compOpts, list):
+            for item in compOpts:
+                self.write('COMPILER_FLAGS += {}\n'.format(item))
+            self.write('\n')
+        else:
+            log.debug("Not load getCompilerOpts")
+
+    def write_ldflags(self):
+        print(self.project.compilerOpts)
+        # if isinstance(linkOpts, dict):
+        #     for keys in linkOpts:
+        #         makevars.write('# {0}\n'.format(keys))
+        #         makevars.write(
+        #             'LDFLAGS += {}\n'.format(list2str(linkOpts[keys])))
+        # elif isinstance(linkOpts, list):
+        #     for item in linkOpts:
+        #         makevars.write('LDFLAGS += {}\n'.format(item))
+
+    def process(self) -> str:
+        # strproj = self.project.projSettings['PROJECT_NAME']
+        # strproj_out = self.project.projSettings['FOLDER_OUT']
+        # self.write(f"PROJECT = {strproj}\n")
+        # self.write(f"PROJECT_OUT = {strproj_out}\n")
+        # self.write('\n')
+
+        for key, value in self.project.projSettings.items():
+            self.write(f"{key} = {value}\n")
+        self.write('\n')
+        
+        for key, value in self.project.compilerSettings.items():
+            if key != 'INCLUDES':
+                self.write(f"{key:<10} := {value}\n")
+        self.write('\n')
+
+        self.write_cflags()
+        self.write('\n')
+
+        self.write_ldflags()
+
+        return ''.join(self.output)
+
+class SrcsGenerator(Generator):
 
     def __init__(self, module, project: Pymaketool):
         super().__init__(module, project)
@@ -57,9 +118,6 @@ class MakeGenerator(Generator):
         if self.isstaticlib:
             mod:StaticLibraryModule = module
             mod.decorate_module()
-
-    def write(self, value):
-        self.output.append(value)
 
     def get_srcs_dirs(self, srcs) -> list:
         dirs = []
@@ -182,4 +240,51 @@ class MakeGenerator(Generator):
         self.write_compiler_opts()
         if self.isstaticlib:
             self.write_staticlib_rules()
+        return ''.join(self.output)
+
+
+class TargetsGenerator(Generator):
+
+    def __init__(self, project: Pymaketool):
+        super().__init__(None, project)
+
+    def process(self) -> str:
+        targets = self.project.compilerOpts['TARGETS']
+        for key, value in targets.items():
+            filedep = value['FILE']
+            self.write(f"{key:<15} = {filedep}\n")
+        self.write('\n')
+
+        keylist = list(targets)
+        last_target = keylist[-1]
+        self.write(f"TARGETS = $({last_target})\n")
+        self.write('\n')
+
+        count = 0
+        for key, value in targets.items():
+            filedep = value['FILE']
+            script  = ' '.join(value['SCRIPT'])
+            logkey  = value['LOGKEY']
+
+            if (key == 'TARGET'):
+                self.write(f"$({key}): $(OBJECTS) $(SLIBS_OBJECTS)")
+            else:
+                self.write(f"$({key}):")
+
+            if count:
+                self.write(" $({})\n".format(keylist[count - 1]))
+            else:
+                self.write("\n")
+
+            self.write(f"\t$(call logger-compile,\"{logkey}\",$@)\n")
+            self.write(f"\t{script}\n")
+            self.write("\n")
+            count += 1
+
+        self.write("clean_targets:\n")
+        self.write("\trm -rf")
+        for key in keylist:
+            self.write(f" $({key})")
+        self.write('\n')
+
         return ''.join(self.output)
