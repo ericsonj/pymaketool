@@ -22,7 +22,7 @@ copyright = '2020, Ericson Joseph'
 author = 'Ericson Joseph'
 
 # The full version, including alpha/beta/rc tags
-release = '2.0.3'
+release = '2.0.4'
 
 version = release
 
