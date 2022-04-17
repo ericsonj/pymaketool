@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pymaketool",
-    version="2.0.4",
+    version="2.0.5",
     author="Ericson Joseph",
     author_email="ericsonjoseph@gmail.com",
     description="Python Makefile Tool",
@@ -19,6 +19,8 @@ setuptools.setup(
     package_data={'': ['*.glade', '*.tar.gz']},
     install_requires=[
         'prompt_toolkit',
+        'hashlib',
+        'pathlib'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

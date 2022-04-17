@@ -27,7 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-
+import os
+from pymakelib.preutil import copyFile, getFileHash
 from . import AbstractMake
 from typing import List
 import sys
@@ -106,18 +107,36 @@ def wprGetCompilerOpts(mod, modHandle, moduleInstance=None):
         log.exception(ex)
         exit(-1)
 
-def reafGenHeader(headerpath):
+
+def tmp_file_name(file_path: str):
+    return f"{file_path}~"
+
+
+def overrideFile(outfile):
+    if not Path(outfile).exists():
+        copyFile(tmp_file_name(outfile), outfile)
+        return
+    outfile_hash = getFileHash(outfile)
+    tmp_outfile_hash = getFileHash(tmp_file_name(outfile))
+    if (outfile_hash != tmp_outfile_hash):
+        copyFile(tmp_file_name(outfile), outfile)
+
+
+def readGenHeader(headerpath):
     lib = importlib.util.spec_from_file_location(str(headerpath), str(headerpath))
     mod = importlib.util.module_from_spec(lib)
     log.debug(f"exec code generator {mod.__name__}")
     outfile = str(headerpath)
     outfile = outfile.replace('_h.py', '.h')
     outfile = outfile.replace('.h.py', '.h')
-    log.debug(f"output fiel {outfile}")
+    log.debug(f"output file {outfile}")
     stdout_ = sys.stdout #Keep track of the previous value.
-    sys.stdout = open(outfile, 'w') # Something here that provides a write method.
+    sys.stdout = open(tmp_file_name(outfile), 'w') # Something here that provides a write method.
     lib.loader.exec_module(mod)
+    sys.stdout.close()
     sys.stdout = stdout_
+    overrideFile(outfile)
+    os.remove(tmp_file_name(outfile))
 
 
 def read_module(module_path: Path, compiler_opts, goals=None) -> List[AbstractModule]:
