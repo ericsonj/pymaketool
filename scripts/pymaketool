@@ -126,7 +126,7 @@ headersPaths = list(Path('./').rglob('*[.|_]h.py'))
 for gheader in headersPaths:
     fileout = re.sub('[.|_]h.py', '.h', str(gheader))
     print(f"Generator: {gheader} > {fileout}")
-    plib.reafGenHeader(gheader)
+    plib.readGenHeader(gheader)
 
 
 modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))

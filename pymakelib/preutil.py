@@ -31,6 +31,7 @@ from pathlib import Path
 from .module import ModuleHandle
 from .module import SrcType
 from .module import IncType
+import hashlib
 
 def getAllSrcs(wkmh, srcType: SrcType):
     if isinstance(wkmh, ModuleHandle):
@@ -87,3 +88,13 @@ def getAllIncs_C(wkmh):
     else:
         wk = wkmh
     return getAllIncs(wk, IncType.C)
+
+
+def getFileHash(file_path: str):
+    with open(file_path, 'rb')  as file:
+        return hashlib.md5(file.read()).hexdigest()
+
+
+def copyFile(file_path_from, file_path_to):
+    with open(file_path_to, 'wb') as file:
+        file.write(open(file_path_from, 'rb').read())

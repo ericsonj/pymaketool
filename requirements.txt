@@ -1,1 +1,2 @@
-prompt_toolkit
+prompt_toolkit==3.0.18
+setuptools==45.2.0
