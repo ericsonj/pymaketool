@@ -19,8 +19,7 @@ setuptools.setup(
     package_data={'': ['*.glade', '*.tar.gz']},
     install_requires=[
         'prompt_toolkit',
-        'hashlib',
-        'pathlib'
+        'pathlib',
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
