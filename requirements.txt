@@ -1,2 +1,2 @@
 prompt_toolkit==3.0.18
-setuptools==45.2.0
+setuptools==65.5.1
