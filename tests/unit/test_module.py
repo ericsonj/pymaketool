@@ -8,6 +8,9 @@ class TestModule(unittest.TestCase):
     def test_src_type(self):
         self.assertIn('.c', module.SrcType.C)
         self.assertIn('.C', module.SrcType.CPP)
+        self.assertIn('.s', module.SrcType.ASM)
+        self.assertIn('.S', module.SrcType.ASM)
+        self.assertIn('.asm', module.SrcType.ASM)
         
 
     def test_inc_type(self):

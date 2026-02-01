@@ -172,7 +172,7 @@ class SrcsGenerator(Generator):
                 self.write("{}CSRC += {}\n".format(prefixSrcs, src))
             elif str(src).endswith('.cpp'):
                 self.write("{}CXXSRC += {}\n".format(prefixSrcs, src))
-            elif str(src).endswith('.s'):
+            elif str(src).endswith(('.s', '.S', '.asm')):
                 self.write("{}ASSRC += {}\n".format(prefixSrcs, src))
         self.write('\n') if srcs else None
 
@@ -191,13 +191,13 @@ class SrcsGenerator(Generator):
             isstatic = self.isstaticlib
             for src in srcs:
                 if isstatic:
-                    objs = str(src).replace('.c', '.o').replace('.s', '.o')
+                    objs = str(src).replace('.c', '.o').replace('.s', '.o').replace('.S', '.o').replace('.asm', '.o')
                     outputObj = '$({}_OUTPUT)/'.format(self.module.key) + str(objs)
                     self.write("{} : CFLAGS = {}\n".format(str(outputObj), self.compiler_opts2str(comp_opts)))
                 else:
                     objs = str(src).replace('.cpp', '.o')
                     objs = objs.replace('.c', '.o')
-                    objs = objs.replace('.s', '.o')
+                    objs = objs.replace('.s', '.o').replace('.S', '.o').replace('.asm', '.o')
                     ouputobj = Path(str(proj_settings['FOLDER_OUT']) + '/' + str(objs))
                     log.debug(ouputobj)
                     self.write("{} : CFLAGS = {}\n".format(str(ouputobj), self.compiler_opts2str(comp_opts)))
@@ -226,7 +226,7 @@ class SrcsGenerator(Generator):
         if mod.rebuild:
             self.write('\n')
             for src in mod.getSrcs():
-                obj = str(src).replace('.c', '.o').replace('.s', '.o')
+                obj = str(src).replace('.c', '.o').replace('.s', '.o').replace('.S', '.o').replace('.asm', '.o')
                 outputObj = '$({}_OUTPUT)/'.format(mod.key) + str(obj)
                 self.write("{} : .FORCE\n".format(outputObj))
             self.write('\n')

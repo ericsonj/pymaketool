@@ -185,7 +185,7 @@ for mod in modules:
             srcsfile.write("{}CSRC += {}\n".format(prefixSrcs, src))
         elif str(src).endswith('.cpp'):
             srcsfile.write("{}CXXSRC += {}\n".format(prefixSrcs, src))
-        elif str(src).endswith('.s'):
+        elif str(src).endswith(('.s', '.S', '.asm')):
             srcsfile.write("{}ASSRC += {}\n".format(prefixSrcs, src))
 
     srcsfile.write('\n')
@@ -206,7 +206,7 @@ for mod in modules:
     if mod.flags:
         if mod.staticLib:
             for src in mod.srcs:
-                objs = str(src).replace('.c', '.o').replace('.s', '.o')
+                objs = str(src).replace('.c', '.o').replace('.s', '.o').replace('.S', '.o').replace('.asm', '.o')
                 mkkey = mod.staticLib.name.upper()
                 outputObj = '$({}_OUTPUT)/'.format(mkkey) + str(objs)
                 srcsfile.write("{} : CFLAGS = {}\n".format(
@@ -215,7 +215,7 @@ for mod in modules:
             for src in mod.srcs:
                 objs = str(src).replace('.cpp', '.o')
                 objs = objs.replace('.c', '.o')
-                objs = objs.replace('.s', '.o')
+                objs = objs.replace('.s', '.o').replace('.S', '.o').replace('.asm', '.o')
                 ouputobj = Path(str(projSettings['FOLDER_OUT']) + '/' + str(objs))
                 log.debug(ouputobj)
                 srcsfile.write("{} : CFLAGS = {}\n".format(str(ouputobj), plib.compilerOptsByModuleToLine(mod.flags)))
@@ -235,7 +235,7 @@ for mod in modules:
         if mod.staticLib.rebuild:
             srcsfile.write('\n')
             for src in mod.srcs:
-                obj = str(src).replace('.c', '.o').replace('.s', '.o')
+                obj = str(src).replace('.c', '.o').replace('.s', '.o').replace('.S', '.o').replace('.asm', '.o')
                 mkkey = mod.staticLib.name.upper()
                 outputObj = '$({}_OUTPUT)/'.format(mkkey) + str(obj)
                 srcsfile.write("{} : .FORCE\n".format(outputObj))
