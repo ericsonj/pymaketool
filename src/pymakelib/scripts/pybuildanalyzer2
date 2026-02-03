@@ -35,10 +35,6 @@ import argparse
 from pathlib import Path
 import json
 from typing import Text
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
 
 # ---------------------
 
@@ -538,6 +534,11 @@ if regions and sectionsMap:
                     r.sections.append(sec)
 
     if args.gtk:
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+
         win = GtkRegionsWin(regions, resource_filename("pymakelib.resources.gtk", "pybagui.glade"))
         win.show()
     else:

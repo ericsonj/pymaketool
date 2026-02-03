@@ -2,7 +2,7 @@ import datetime
 import os
 from pathlib import Path
 from pymakelib import nproject
-from pkg_resources import resource_filename
+import importlib.resources
 import argparse
 
 class CLinuxGCC(nproject.BasicGenerator):
@@ -57,7 +57,7 @@ Command: pynewproject CLinuxGCC author=\\\"Author\\\" project_name=project
 
         output_dir = Path( Path(os.getcwd()) / Path(tokens['project_name'])) 
 
-        gzip_file = resource_filename("pymakelib.resources.templates", "clinuxgcc.tar.gz")
+        gzip_file = str(importlib.resources.files("pymakelib.resources.templates") / "clinuxgcc.tar.gz")
 
         return {
             "temp_name":        "clinuxgcc",

@@ -1,2 +1,0 @@
-prompt_toolkit==3.0.18
-setuptools==65.5.1
