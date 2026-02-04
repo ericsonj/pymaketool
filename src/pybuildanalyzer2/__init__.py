@@ -38,6 +38,7 @@ For ARM, uses standard GNU linker map file format.
 
 import re
 import os
+import glob
 import subprocess
 import argparse
 from pathlib import Path
@@ -125,344 +126,32 @@ class WebRegionsServer:
         self.port = port
         self.httpd = None
 
-    def get_html_template(self):
-        return '''<!DOCTYPE html>
+    def get_html_template(self):        
+        # Get the directory where this file is located
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        dist_dir = os.path.join(current_dir, 'dist')
+        
+        try:
+            # Read the index.html file
+            html_file = os.path.join(dist_dir, 'index.html')
+            with open(html_file, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+                
+            return html_content
+            
+        except:
+            # Fallback to a simple HTML template if dist files don't exist
+            return '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Build Analyzer - Memory Regions</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .tabs {
-            display: flex;
-            background: #e9e9e9;
-        }
-        .tab {
-            padding: 15px 25px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s;
-        }
-        .tab.active {
-            background: white;
-            border-bottom-color: #007acc;
-        }
-        .tab-content {
-            display: none;
-            padding: 20px;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .search-box {
-            margin-bottom: 20px;
-            padding: 10px;
-            width: 300px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-        }
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-        .progress-bar {
-            width: 200px;
-            height: 20px;
-            background-color: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4CAF50 0%, #FFC107 60%, #F44336 90%);
-            border-radius: 10px;
-            transition: width 0.3s;
-        }
-        .progress-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-        }
-        .tree {
-            margin-left: 0;
-        }
-        .tree-item {
-            margin: 2px 0;
-            cursor: pointer;
-        }
-        .tree-item.expandable:before {
-            content: '▶';
-            display: inline-block;
-            margin-right: 5px;
-            transition: transform 0.2s;
-        }
-        .tree-item.expanded:before {
-            transform: rotate(90deg);
-        }
-        .tree-children {
-            margin-left: 20px;
-            display: none;
-        }
-        .tree-children.expanded {
-            display: block;
-        }
-        .tree-region {
-            font-weight: bold;
-            color: #007acc;
-        }
-        .tree-section {
-            color: #666;
-        }
-        .tree-symbol {
-            color: #999;
-            font-size: 0.9em;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Build Analyzer - Memory Regions</h1>
-        
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('regions')">Memory Regions</button>
-            <button class="tab" onclick="showTab('details')">Memory Details</button>
-        </div>
-
-        <div id="regions" class="tab-content active">
-            <table id="regionsTable">
-                <thead>
-                    <tr>
-                        <th>Region</th>
-                        <th>Start Address</th>
-                        <th>End Address</th>
-                        <th>Size</th>
-                        <th>Free</th>
-                        <th>Used</th>
-                        <th>Usage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Regions data will be populated here -->
-                </tbody>
-            </table>
-        </div>
-
-        <div id="details" class="tab-content">
-            <input type="text" class="search-box" placeholder="Search symbols..." id="searchInput" oninput="filterTree()">
-            <div id="memoryTree" class="tree">
-                <!-- Tree data will be populated here -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let regionsData = null;
-        let filteredData = null;
-
-        function showTab(tabName) {
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected tab content
-            document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-        }
-
-        function toKB(bytes) {
-            if (bytes < 1024) {
-                return bytes + ' B';
-            }
-            return (bytes / 1024).toFixed(2) + ' KB';
-        }
-
-        function populateRegionsTable(regions) {
-            const tbody = document.querySelector('#regionsTable tbody');
-            tbody.innerHTML = '';
-            
-            regions.forEach(region => {
-                const row = document.createElement('tr');
-                const usage = region.length > 0 ? (region.using / region.length * 100) : 0;
-                
-                row.innerHTML = `
-                    <td>${region.name}</td>
-                    <td>0x${region.origin.toString(16).toUpperCase().padStart(8, '0')}</td>
-                    <td>0x${region.end.toString(16).toUpperCase().padStart(8, '0')}</td>
-                    <td>${toKB(region.length)}</td>
-                    <td>${toKB(region.length - region.using)}</td>
-                    <td>${toKB(region.using)}</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${usage}%"></div>
-                            <div class="progress-text">${usage.toFixed(2)}%</div>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function createTreeItem(name, addr, loadAddr, size, type, level = 0) {
-            const item = document.createElement('div');
-            item.className = `tree-item tree-${type}`;
-            item.style.marginLeft = `${level * 20}px`;
-            
-            const addrStr = addr > 0 ? `0x${addr.toString(16).toUpperCase().padStart(8, '0')}` : '';
-            const loadAddrStr = loadAddr > 0 ? `0x${loadAddr.toString(16).toUpperCase().padStart(8, '0')}` : '';
-            const sizeStr = size > 0 ? toKB(size) : '';
-            
-            item.innerHTML = `
-                <span style="display: inline-block; width: 300px;">${name}</span>
-                <span style="display: inline-block; width: 120px;">${addrStr}</span>
-                <span style="display: inline-block; width: 120px;">${loadAddrStr}</span>
-                <span style="display: inline-block; width: 100px;">${sizeStr}</span>
-            `;
-            
-            return item;
-        }
-
-        function populateMemoryTree(regions, searchTerm = '') {
-            const container = document.getElementById('memoryTree');
-            container.innerHTML = '';
-            
-            regions.forEach(region => {
-                const regionItem = createTreeItem(region.name, region.origin, 0, region.length, 'region', 0);
-                regionItem.classList.add('expandable');
-                
-                const sectionsContainer = document.createElement('div');
-                sectionsContainer.className = 'tree-children';
-                
-                let hasMatchingSections = false;
-                
-                region.sections.forEach(section => {
-                    const sectionMatches = !searchTerm || section.name.toLowerCase().includes(searchTerm.toLowerCase());
-                    let hasMatchingSymbols = false;
-                    
-                    const sectionItem = createTreeItem(section.name, section.addr, section.load_addr, section.size, 'section', 1);
-                    
-                    const symbolsContainer = document.createElement('div');
-                    symbolsContainer.className = 'tree-children';
-                    
-                    if (section.symbols) {
-                        section.symbols.forEach(symbol => {
-                            const symbolMatches = !searchTerm || symbol.name.toLowerCase().includes(searchTerm.toLowerCase());
-                            
-                            if (symbolMatches || sectionMatches) {
-                                hasMatchingSymbols = true;
-                                const diff = symbol.addr - section.addr;
-                                const loadAddr = section.load_addr > 0 ? section.load_addr + diff : 0;
-                                const symbolItem = createTreeItem(symbol.name, symbol.addr, loadAddr, symbol.size, 'symbol', 2);
-                                symbolsContainer.appendChild(symbolItem);
-                            }
-                        });
-                    }
-                    
-                    if ((sectionMatches || hasMatchingSymbols) && (!searchTerm || sectionMatches || hasMatchingSymbols)) {
-                        hasMatchingSections = true;
-                        if (symbolsContainer.children.length > 0) {
-                            sectionItem.classList.add('expandable');
-                            sectionItem.appendChild(symbolsContainer);
-                        }
-                        sectionsContainer.appendChild(sectionItem);
-                    }
-                });
-                
-                if (!searchTerm || hasMatchingSections) {
-                    if (sectionsContainer.children.length > 0) {
-                        regionItem.appendChild(sectionsContainer);
-                    }
-                    container.appendChild(regionItem);
-                }
-            });
-            
-            // Add click handlers for expansion
-            container.querySelectorAll('.expandable').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    this.classList.toggle('expanded');
-                    const children = this.querySelector('.tree-children');
-                    if (children) {
-                        children.classList.toggle('expanded');
-                    }
-                });
-            });
-            
-            // Expand all by default if no search term
-            if (!searchTerm) {
-                container.querySelectorAll('.expandable').forEach(item => {
-                    item.classList.add('expanded');
-                    const children = item.querySelector('.tree-children');
-                    if (children) {
-                        children.classList.add('expanded');
-                    }
-                });
-            }
-        }
-
-        function filterTree() {
-            const searchTerm = document.getElementById('searchInput').value;
-            if (regionsData) {
-                populateMemoryTree(regionsData, searchTerm);
-            }
-        }
-
-        // Load data from server
-        fetch('/api/data')
-            .then(response => response.json())
-            .then(data => {
-                regionsData = data;
-                populateRegionsTable(data);
-                populateMemoryTree(data);
-            })
-            .catch(error => {
-                console.error('Error loading data:', error);
-            });
-    </script>
+    <div id="root"></div>
+    <p>Error: Built files not found. Please build the frontend first.</p>
+    <p>Run: <code>pnpm build</code> in the UI project directory</p>
 </body>
 </html>'''
 
@@ -485,6 +174,30 @@ class WebRegionsServer:
                     self.end_headers()
                     data = json.dumps(self.server.regions_data, default=lambda x: x.__dict__)
                     self.wfile.write(data.encode())
+                elif self.path.startswith('/assets/'):
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    asset_path = os.path.join(current_dir, 'dist', self.path[1:])  # Remove leading slash
+                    
+                    try:
+                        with open(asset_path, 'rb') as f:
+                            content = f.read()
+                        
+                        self.send_response(200)
+                        if asset_path.endswith('.js'):
+                            self.send_header('Content-type', 'application/javascript')
+                        elif asset_path.endswith('.css'):
+                            self.send_header('Content-type', 'text/css')
+                        else:
+                            self.send_header('Content-type', 'application/octet-stream')
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except FileNotFoundError:
+                        self.send_response(404)
+                        self.end_headers()
+                elif self.path == '/vite.svg':
+                    # Handle vite.svg if needed, or return 404
+                    self.send_response(404)
+                    self.end_headers()
                 else:
                     self.send_response(404)
                     self.end_headers()
