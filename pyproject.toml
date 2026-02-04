@@ -16,6 +16,7 @@ packages = [
     { include = "pymakedot", from = "src" },
     { include = "pybuildanalyzer", from = "src" },
     { include = "pybuildanalyzer2", from = "src" },
+    { include = "pymaketool", from = "src" },
 ]
 
 [tool.poetry.scripts]
