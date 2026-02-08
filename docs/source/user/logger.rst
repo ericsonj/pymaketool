@@ -3,14 +3,14 @@
 Logger
 ======
 
-To enable logger of **pymaketool**, set environment variable LOGLEVEL.
-Default value is NOTSET.
+To enable the **pymaketool** logger, set the environment variable LOGLEVEL.
+The default value is NOTSET.
 
 .. code-block:: bash
 
     $ export LOGLEVEL=DEBUG 
 
-Or add paramter in make command.
+Or add a parameter to the make command.
 
 .. code-block:: bash
 
