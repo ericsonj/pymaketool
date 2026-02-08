@@ -7,8 +7,8 @@
 <img src="https://github.com/ericsonj/pymaketool/workflows/Test/badge.svg?branch=master">
 </p>
 
-**pymaketool** is an elegant and simple tool to build and manager large C/C++ projects and libraries.
-The main purpose is to ease the build process of a project using Python for find and organize file sources.
+**pymaketool** is an elegant and simple tool to build and manage large C/C++ projects and libraries.
+The main purpose is to simplify the build process by using Python to find and organize source files.
 
 <img src="https://github.com/ericsonj/pymaketool/raw/master/images/makefile_pyfile.jpg" alt="" title="makefile vs pymaketool" width="500" />
 
@@ -36,6 +36,62 @@ Install pymaketool:
 $ pip3 install pymaketool 
 ```
 
+## Quick Start with Poetry
+
+If you prefer using [Poetry](https://python-poetry.org/) for dependency management, you can set up your C project as a Poetry project:
+
+### Install Poetry
+```bash
+$ curl -sSL https://install.python-poetry.org | python3 -
+```
+
+### Create a new C project with Poetry
+```bash
+$ pynewproject CLinuxGCC
+  (author) Your name: Ericson
+  (project_name) Your project name: hello
+
+$ cd hello
+
+# Initialize Poetry in your project
+hello$ poetry init --name hello --dependency pymaketool
+
+# Install dependencies
+hello$ poetry install
+```
+
+### Build using Poetry
+```bash
+# Clean the project
+hello$ poetry run make clean
+
+# Build the project
+hello$ poetry run make
+
+# Run the executable
+hello$ ./Release/hello
+```
+
+### Example pyproject.toml for a C project
+```toml
+[project]
+name = "hello"
+version = "0.1.0"
+description = "My C project using pymaketool"
+authors = [{ name = "Your Name", email = "your@email.com" }]
+requires-python = ">=3.10"
+dependencies = ["pymaketool"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+build = "subprocess:run"
+```
+
+Using Poetry ensures consistent Python environments across different machines and simplifies dependency management for your build tools.
+
 Create new basic C project.
 ```bash
 $ pynewproject CLinuxGCC
@@ -50,11 +106,11 @@ hello$ make
 
 hello$ ./Release/hello
 ```
-Note: this example use **EclipseAddon** by default, pymaketool generate files *.setting/language.settings.xml* and *.cproject*.
+Note: This example uses **EclipseAddon** by default; pymaketool generates the files *.settings/language.settings.xml* and *.cproject*.
 
 ## Quick start in Docker
 
-Pull imagen and run container:
+Pull the image and run a container:
 ```bash
 $ docker pull ericsonjoseph/pymaketool
 
@@ -65,7 +121,7 @@ ubuntu@$ pynewproject CLinuxGCC
 
 ## Quick Info
 
- **pymaketool** process modules of code like objects. These objects ware define by files **_mk.py*. With Python you can code how to discover and get source files and include paths, e.g.:
+**pymaketool** processes code modules as objects. These objects are defined by files ending with **_mk.py**. With Python, you can write code to discover and retrieve source files and include paths, e.g.:
 
 ```python
 # File app_mk.py
@@ -76,25 +132,25 @@ from pymakelib import module
 class App(module.AbstractModule):
 
     def getSrcs(self):
-        # Get all sources .c in current folder ./app/
-        # return [ 'app/app.c' ]
+        # Get all .c source files in the current folder ./app/
+        # Returns e.g.: [ 'app/app.c' ]
         return self.getAllSrcsC() 
 
     def getIncs(self):
-        # Get all include paths in current folder ./app/
-        # return [ 'app/app.c' ]
+        # Get all include paths in the current folder ./app/
+        # Returns e.g.: [ 'app' ]
         return self.getAllIncsC()
 
 ```
 
-The file app_mk.py could be more short and ease, e.g.:
+The file app_mk.py can be shorter and simpler, e.g.:
 
 ```python
 # File app_mk.py
 
 from pymakelib import module
 
-# BasicCModule inherits from AbstractModule and implement getSrcs and getIncs.
+# BasicCModule inherits from AbstractModule and implements getSrcs and getIncs.
 @module.ModuleClass
 class App(module.BasicCModule):
     pass
@@ -122,7 +178,7 @@ class App():
     
 ```
 
-Remote modules could be load like static libraries  and with special compiler flags. e.g:
+Remote modules can be loaded as static libraries with custom compiler flags, e.g.:
 
 ```python
 # File extlib_mk.py
@@ -133,7 +189,7 @@ from pymakelib import module
 class ExtLib(module.ExternalModule):
     
     def init(self):
-        # Compile modulelib like static library (Optional)
+        # Compile modulelib as a static library (Optional)
         return module.StaticLibrary("modulelib", "Release", rebuild=True)
      
     def getModulePath(self)->str:
@@ -142,7 +198,7 @@ class ExtLib(module.ExternalModule):
 
 
     def getCompilerOpts(self):
-        # Override method and set speacial compiler flags (Optional)
+        # Override method and set special compiler flags (Optional)
         opts = project.getCompilerOpts()
         opts['CONTROL-C-OPTS'] = ['-std=c99']
         return opts

@@ -3,7 +3,7 @@
 pybuildanalyzer2
 ================
 
-Util for ARM embedded systems. This utility summarizes memory usage and symbols size.
+A utility for ARM embedded systems. This utility summarizes memory usage and symbol sizes.
 
 .. code-block:: bash
 
@@ -53,7 +53,7 @@ Output in GTK
 pymakedot
 =========
 
-This utility create a simple dot file (a.out) of pymaketool modules. e.g.:
+This utility creates a simple dot file (a.out) of pymaketool modules. For example:
 
 .. code-block:: bash
 

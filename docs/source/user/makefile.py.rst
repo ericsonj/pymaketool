@@ -58,7 +58,7 @@ Example of Makefile.py for build a linux application:
 
     def getCompilerSet():
         """
-        Return the compilet set.
+        Return the compiler set.
 
         Returns:
             dict with path of executables: 

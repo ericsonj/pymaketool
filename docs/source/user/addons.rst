@@ -3,8 +3,8 @@
 Addons
 ======
 
-pymaketool support addons for extenden functionalities. The addons will be executed before the compilation of the project.
-Add the next lines en **Makefile.py**
+pymaketool supports addons for extended functionalities. The addons are executed before the compilation of the project.
+Add the following lines to **Makefile.py**:
 
 .. code-block:: python
 
@@ -17,7 +17,7 @@ Add the next lines en **Makefile.py**
 Addon  function
 ---------------
 
-Simple addon, her entry point is a function with two arguments, for example:
+Simple addon; its entry point is a function with two arguments. For example:
 
 .. code-block:: python
 
@@ -137,7 +137,7 @@ Add in Makefile.py the line:
 Addon  class
 ------------
 
-Scalable version for development and extenden addons, for example:
+Scalable version for developing extended addons. For example:
 
 .. code-block:: python
 

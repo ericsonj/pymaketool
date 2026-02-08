@@ -66,8 +66,8 @@ Load remote module:
          return '/LIBS/module_lib/module_lib_mk.py'
 
 
-**pymaketool** allow to you create C projects with anything structure extremely easily.
-Use Eclipse IDE for open and edit your project, pymaketool generates the necessary files for this.
+**pymaketool** allows you to create C projects with any structure extremely easily.
+Use the Eclipse IDE to open and edit your project; pymaketool generates the necessary files for this.
 
 .. image:: img/pymaketool.jpg
   :width: 400
@@ -75,7 +75,7 @@ Use Eclipse IDE for open and edit your project, pymaketool generates the necessa
 
 ----------------
 
-**Structure of un pymaketool project**
+**Structure of a pymaketool project**
 
 .. image:: img/project.jpg
   :width: 700

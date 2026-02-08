@@ -3,7 +3,7 @@
 User scripts
 ============
 
-The developer can add more python scripts and import into _mk.py files.
+Developers can add more Python scripts and import them into _mk.py files.
 
 .. image:: ../img/user_scripts.jpg
   :width: 300
@@ -18,7 +18,7 @@ For example in **func.py**:
     def log(msg):
         print(msg)
 
-The **func.py** can import in **app_mk.py**:
+**func.py** can be imported in **app_mk.py**:
 
 .. code-block:: python
 
