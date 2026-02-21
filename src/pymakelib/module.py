@@ -31,6 +31,7 @@ import re
 import importlib.util
 import copy
 from pathlib import Path
+from typing import Final, List
 from . import preconts as K
 from . import git
 from abc import ABC,abstractmethod, ABCMeta
@@ -39,14 +40,14 @@ from . import Logger
 log = Logger.getLogger()
 
 class SrcType:
-    C = ['.c']
-    CPP = ['.C', '.cc', '.cpp', '.CPP', '.c++', '.cp', '.cxx']
-    ASM = ['.s', '.S', '.asm']
+    C: Final[List[str]] = ['.c']
+    CPP: Final[List[str]] = ['.C', '.cc', '.cpp', '.CPP', '.c++', '.cp', '.cxx']
+    ASM: Final[List[str]] = ['.s', '.S', '.asm']
 
 
 class IncType:
-    C = ['.h']
-    CPP = ['.h', '.hpp', '.h++', '.hh']
+    C: Final[List[str]] = ['.h']
+    CPP: Final[List[str]] = ['.h', '.hpp', '.h++', '.hh']
 
 
 class StaticLibrary:
@@ -194,7 +195,7 @@ class ModuleHandle:
     def getAllSrcsC(self):
         return self.getAllSrcs(SrcType.C)
 
-    def getAllSrcs(self, srcType: SrcType):
+    def getAllSrcs(self, srcType: List[str]):
         srcs = []
         for ext in srcType:
             srcs += list(Path(self.modDir).rglob('*' + ext))
@@ -212,7 +213,7 @@ class ModuleHandle:
         srcs = list(dict.fromkeys(srcs))
         return srcs
 
-    def getAllIncs(self, incType: IncType):
+    def getAllIncs(self, incType: List[str]):
         incsfiles = []
         for ext in incType:
             incsfiles += list(Path(self.modDir).rglob('*' + ext))
@@ -311,7 +312,7 @@ class AbstractModule(ABC):
         """        
         pass
     
-    def findSrcs(self, src_type: SrcType) -> list:
+    def findSrcs(self, src_type: List[str]) -> list:
         """Util method for find sources in module path
 
         Args:
@@ -326,7 +327,7 @@ class AbstractModule(ABC):
             srcs += list(Path(self.dir).rglob('*' + ext))
         return srcs
         
-    def findIncs(self, inc_type: IncType) -> list:
+    def findIncs(self, inc_type: List[str]) -> list:
         """Util method for find includes in module path
 
         Args:
