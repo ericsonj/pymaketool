@@ -70,6 +70,7 @@ class TestBasicCModuleFs(unittest.TestCase):
         (tmp / "utils.c").write_text("")
 
         class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
             def get_path(_self):
                 return str(tmp / "mod_mk.py")
 
@@ -85,6 +86,7 @@ class TestBasicCModuleFs(unittest.TestCase):
         (inc_dir / "header.h").write_text("")
 
         class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
             def get_path(_self):
                 return str(tmp / "mod_mk.py")
 
@@ -98,6 +100,7 @@ class TestBasicCModuleFs(unittest.TestCase):
         (tmp / "main.cc").write_text("")
 
         class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
             def get_path(_self):
                 return str(tmp / "mod_mk.py")
 
@@ -112,6 +115,7 @@ class TestBasicCModuleFs(unittest.TestCase):
         (inc_dir / "algo.hpp").write_text("")
 
         class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
             def get_path(_self):
                 return str(tmp / "mod_mk.py")
 

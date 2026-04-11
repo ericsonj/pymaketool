@@ -139,11 +139,17 @@ def readGenHeader(headerpath):
     os.remove(tmp_file_name(outfile))
 
 
-def read_module(module_path: Path, compiler_opts, goals=None) -> List[AbstractModule]:
+def read_module(module_path: Path, compiler_opts, goals=None, project_root: Path = None) -> List[AbstractModule]:
     lib = importlib.util.spec_from_file_location(str(module_path), str(module_path))
     mod = importlib.util.module_from_spec(lib)
+    setattr(mod, '_project_root', project_root)
+    # mod._project_root = project_root
+    sys.modules[mod.__name__] = mod
     log.debug(f"exec module {mod.__name__}")
-    lib.loader.exec_module(mod)
+    try:
+        lib.loader.exec_module(mod)
+    finally:
+        sys.modules.pop(mod.__name__, None)
     
     moduleInstances = getModuleInstance()
     modules = []
@@ -164,11 +170,16 @@ def read_module(module_path: Path, compiler_opts, goals=None) -> List[AbstractMo
     return modules
 
 
-def readModule(modPath, compilerOpts, goals=None):
+def readModule(modPath, compilerOpts, goals=None, project_root: Path = None):
     lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
     mod = importlib.util.module_from_spec(lib)
+    mod._project_root = project_root
+    sys.modules[mod.__name__] = mod
     log.debug(f"exec module {mod.__name__}")
-    lib.loader.exec_module(mod)
+    try:
+        lib.loader.exec_module(mod)
+    finally:
+        sys.modules.pop(mod.__name__, None)
 
     moduleInstances = getModuleInstance()
     modules = []

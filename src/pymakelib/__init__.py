@@ -163,13 +163,13 @@ class Pymaketool():
     def readModules(self, modulesPaths) -> list:
         self.modules = []
         for filename in modulesPaths:
-            mod = plib.readModule(filename, copy.deepcopy(self.compilerOpts), None)
+            mod = plib.readModule(filename, copy.deepcopy(self.compilerOpts), None, project_root=Path(self.workpath).resolve())
             self.modules.extend(mod)
         return self.modules
     
     def read_modules(self, modulesPaths) -> List[module.AbstractModule]:
         self.modules = []
         for filename in modulesPaths:
-            mod = plib.read_module(filename, copy.deepcopy(self.compilerOpts), None)
+            mod = plib.read_module(filename, copy.deepcopy(self.compilerOpts), None, project_root=Path(self.workpath).resolve())
             self.modules.extend(mod)
         return self.modules

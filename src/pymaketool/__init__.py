@@ -145,7 +145,7 @@ def main():
     modulesPaths = list(Path("./").rglob("*[.|_]mk.py"))
     # Load modules
     for filename in modulesPaths:
-        mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal)
+        mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal, project_root=Path(".").resolve())
         modules.extend(mod)
 
     for ex in ignoreModuleList:
