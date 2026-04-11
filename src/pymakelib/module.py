@@ -30,46 +30,52 @@ import hashlib
 import re
 import importlib.util
 import copy
+import sys
 from pathlib import Path
 from typing import Final, List
 from . import preconts as K
 from . import git
-from abc import ABC,abstractmethod, ABCMeta
+from abc import ABC, abstractmethod, ABCMeta
 from . import Logger
 
 log = Logger.getLogger()
 
+
 class SrcType:
-    C: Final[List[str]] = ['.c']
-    CPP: Final[List[str]] = ['.C', '.cc', '.cpp', '.CPP', '.c++', '.cp', '.cxx']
-    ASM: Final[List[str]] = ['.s', '.S', '.asm']
+    C: Final[List[str]] = [".c"]
+    CPP: Final[List[str]] = [".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx"]
+    ASM: Final[List[str]] = [".s", ".S", ".asm"]
 
 
 class IncType:
-    C: Final[List[str]] = ['.h']
-    CPP: Final[List[str]] = ['.h', '.hpp', '.h++', '.hh']
+    C: Final[List[str]] = [".h"]
+    CPP: Final[List[str]] = [".h", ".hpp", ".h++", ".hh"]
 
 
 class StaticLibrary:
-    def __init__(self, name: str, outputDir: str, rebuild=False, lib_linked_opts=None, orden=1):
+    def __init__(
+        self, name: str, outputDir: str, rebuild=False, lib_linked_opts=None, orden=1
+    ):
         self.name = name
         self.orden = orden
         self.outputDir = Path(outputDir)
         self.rebuild = rebuild
         self.mkkey = self.name.upper()
-        self.lib_name = 'lib' + self.name + '.a'
+        self.lib_name = "lib" + self.name + ".a"
         self.library = self.outputDir / Path(self.lib_name)
         self.lib_objs = f"{self.mkkey}_OBJECTS = $({self.mkkey}_CSRC:%.c=$({self.mkkey}_OUTPUT)/%.o) $({self.mkkey}_CSRC:%.s=$({self.mkkey}_OUTPUT)/%.o)"
-        self.lib_objs_compile = f"$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{self.library}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
-        self.lib_compile = f"$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))"
+        self.lib_objs_compile = f'$({self.mkkey}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,"CC","{self.library}",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<'
+        self.lib_compile = f'$({self.mkkey}_AR): $({self.mkkey}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $(filter %.o,$({self.mkkey}_OBJECTS))'
         self.lib_linked_opts = lib_linked_opts
-        self.lib_linked = "-L{0} -l{1} {2}".format(self.outputDir, self.name, self._get_str_linked_opts(self.lib_linked_opts))
+        self.lib_linked = "-L{0} -l{1} {2}".format(
+            self.outputDir, self.name, self._get_str_linked_opts(self.lib_linked_opts)
+        )
 
     def _get_str_linked_opts(self, opts):
         if isinstance(opts, str):
             return opts
         elif isinstance(opts, list):
-            return ' '.join(opts)
+            return " ".join(opts)
         else:
             return ""
 
@@ -78,15 +84,15 @@ class StaticLibrary:
 
     def rebuildByCheckStr(self, checkStr: str):
         hs = hashlib.md5(checkStr.encode())
-        cksumfile = Path(self.outputDir / Path('lib' + self.name + '.cksum'))
+        cksumfile = Path(self.outputDir / Path("lib" + self.name + ".cksum"))
         hexstr = hs.hexdigest()
         oldHash = ""
         if cksumfile.exists():
-            cksumfile = open(str(cksumfile), 'r+')
+            cksumfile = open(str(cksumfile), "r+")
             oldHash = cksumfile.read()
         else:
-            cksumfile = open(str(cksumfile), 'w')
-        
+            cksumfile = open(str(cksumfile), "w")
+
         if hexstr != oldHash:
             cksumfile.seek(0)
             cksumfile.truncate(0)
@@ -95,6 +101,7 @@ class StaticLibrary:
             self.setRebuild(True)
 
         cksumfile.close()
+
 
 class Module:
     def __init__(self, srcs, incs, flags, filename, staticLib: StaticLibrary = None):
@@ -105,7 +112,7 @@ class Module:
         self.module_name = ""
         self.staticLib = staticLib
         self.orden = 0 if staticLib == None else staticLib.orden
-    
+
     def isEmpty(self):
         if not self.srcs and not self.incs and not self.staticLib:
             return True
@@ -118,6 +125,7 @@ class Module:
             dirs.append(Path(str(src)).parent)
         dirs = list(set(dirs))
         return dirs
+
 
 class CompilerOptions:
     def __init__(self, opts: dict):
@@ -136,6 +144,7 @@ class CompilerOptions:
         else:
             self.opts[key] = value
 
+
 class GCC_CompilerOpts(CompilerOptions):
     def __init__(self, copts):
         if isinstance(copts, CompilerOptions):
@@ -145,7 +154,7 @@ class GCC_CompilerOpts(CompilerOptions):
         else:
             pass
 
-    def addGeneralOpt(self, opts:list):
+    def addGeneralOpt(self, opts: list):
         self.addOption(K.MK_KEY_GENERAL_OPTS, opts)
 
     def setOptimizationOpts(self, opts: list):
@@ -186,10 +195,7 @@ class ModuleHandle:
         self.goal = goal
 
     def getWorkspace(self):
-        wk = {
-            K.MOD_WORKSPACE: self.modDir,
-            K.MOD_COMPILER_OPTS: self.gCompOpts.opts
-        }
+        wk = {K.MOD_WORKSPACE: self.modDir, K.MOD_COMPILER_OPTS: self.gCompOpts.opts}
         return wk
 
     def getAllSrcsC(self):
@@ -198,14 +204,14 @@ class ModuleHandle:
     def getAllSrcs(self, srcType: List[str]):
         srcs = []
         for ext in srcType:
-            srcs += list(Path(self.modDir).rglob('*' + ext))
+            srcs += list(Path(self.modDir).rglob("*" + ext))
         return srcs
 
     def getFilesByRegex(self, regexs, relativePath=None):
         modulePath = Path(self.modDir)
         if relativePath:
             modulePath = modulePath / Path(relativePath)
-        
+
         srcs = []
         for r in regexs:
             srcs += list(modulePath.rglob(r))
@@ -216,7 +222,7 @@ class ModuleHandle:
     def getAllIncs(self, incType: List[str]):
         incsfiles = []
         for ext in incType:
-            incsfiles += list(Path(self.modDir).rglob('*' + ext))
+            incsfiles += list(Path(self.modDir).rglob("*" + ext))
 
         incs = []
         for i in incsfiles:
@@ -246,10 +252,10 @@ class ModuleHandle:
     @DeprecationWarning
     def initGitModule(self, url, folder, ispymakeproj=False, ignoreList=[]):
         absfolder = Path(Path(self.getRelaptivePath()) / Path(folder))
-        
+
         ignoreModule = []
         ignoreModule += self.getFilesByRegex(ignoreList, relativePath=Path(folder))
-        
+
         git.addSubmodule(url, str(absfolder), ispymakeproj, ignoreModule)
 
     def getGoal(self):
@@ -257,6 +263,7 @@ class ModuleHandle:
 
     def __str__(self):
         return str(self.modDir) + " " + str(self.gCompOpts)
+
 
 class AbstractModule(ABC):
     """Abstract class of pymaketool module
@@ -266,12 +273,23 @@ class AbstractModule(ABC):
 
     Attributes:
         path (str): path of module
-    """    
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.module_name = self.get_module_name()
         self.path = self.get_path()
         self.dir = Path(self.path).parent
+        _src_file = Path(self.__module__).resolve()
+        _mod = sys.modules.get(self.__module__)
+        _proj_root = getattr(_mod, '_project_root', None) if _mod is not None else None
+        if _proj_root is not None:
+            self.module_path = str(_src_file.parent.relative_to(_proj_root)) + "/"
+        else:
+            log.debug(
+                "project root not set; module_path not available outside read_module context"
+            )
+            self.module_path = ""
 
     def get_module_name(self) -> str:
         """Module name
@@ -290,8 +308,7 @@ class AbstractModule(ABC):
         return f"{self.__module__}.{self.module_name}"
 
     def init(self):
-        """Initialization of module
-        """        
+        """Initialization of module"""
         pass
 
     @abstractmethod
@@ -300,18 +317,18 @@ class AbstractModule(ABC):
 
         Returns:
             list: list of sources paths realtive to project
-        """        
+        """
         pass
-    
+
     @abstractmethod
     def getIncs(self) -> list:
         """Abstract method to get the includes paths of module
 
         Returns:
             list: list of includes paths realtive to project
-        """        
+        """
         pass
-    
+
     def findSrcs(self, src_type: List[str]) -> list:
         """Util method for find sources in module path
 
@@ -320,13 +337,13 @@ class AbstractModule(ABC):
 
         Returns:
             list: list of sources paths realtive to project
-        """        
+        """
         log.debug(f"find srcs in {self.dir}")
         srcs = []
         for ext in src_type:
-            srcs += list(Path(self.dir).rglob('*' + ext))
+            srcs += list(Path(self.dir).rglob("*" + ext))
         return srcs
-        
+
     def findIncs(self, inc_type: List[str]) -> list:
         """Util method for find includes in module path
 
@@ -335,10 +352,10 @@ class AbstractModule(ABC):
 
         Returns:
             list: list of includes paths realtive to project
-        """        
+        """
         incsfiles = []
         for ext in inc_type:
-            incsfiles += list(Path(self.dir).rglob('*' + ext))
+            incsfiles += list(Path(self.dir).rglob("*" + ext))
 
         incs = []
         for i in incsfiles:
@@ -352,34 +369,61 @@ class AbstractModule(ABC):
 
         Returns:
             list: list of sources paths realtive to project
-        """        
+        """
         return self.findSrcs(SrcType.C)
 
     def getAllIncsC(self) -> list:
-        """Ütil method for get all includes in module, type C 
+        """Ütil method for get all includes in module, type C
 
         Returns:
             list: list of includes paths realtive to project
-        """        
+        """
         return self.findIncs(IncType.C)
 
     def getCompilerOpts(self):
-        """Get special compiler options for module
-        """        
+        """Get special compiler options for module"""
         pass
+
+    def getSrcsWithPath(self, srcs: list) -> list:
+        """Prefix each source path with module_path.
+
+        Args:
+            srcs (list): list of source filenames (relative to the module dir)
+
+        Returns:
+            list: list of paths prefixed with module_path
+        """
+        return [self.module_path + s for s in srcs]
+
+    def getIncsWithPath(self, incs: list = None) -> list:
+        """Prefix each include path with module_path.
+
+        Args:
+            incs (list, optional): list of include dirs relative to the module dir.
+                If omitted, returns [module_path].
+
+        Returns:
+            list: list of paths prefixed with module_path
+        """
+        if incs is None:
+            return [self.module_path]
+        return [self.module_path + i for i in incs]
+
 
 class StaticLibraryModule(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return (hasattr(subclass, 'get_lib_name') and 
-                callable(subclass.get_lib_name) and
-                hasattr(subclass, 'get_lib_outputdir') and 
-                callable(subclass.get_lib_outputdir))
+        return (
+            hasattr(subclass, "get_lib_name")
+            and callable(subclass.get_lib_name)
+            and hasattr(subclass, "get_lib_outputdir")
+            and callable(subclass.get_lib_outputdir)
+        )
 
     def decorate_module(self):
         self.name = self.get_lib_name()
-        self.lib_name = 'lib' + self.name + '.a'
+        self.lib_name = "lib" + self.name + ".a"
         self.output_dir = Path(self.get_lib_outputdir())
         self.orden = self.get_order()
         self.rebuild = self.get_rebuild()
@@ -394,7 +438,7 @@ class StaticLibraryModule(metaclass=ABCMeta):
         if isinstance(opts, str):
             return opts
         elif isinstance(opts, list):
-            return ' '.join(opts)
+            return " ".join(opts)
         else:
             return ""
 
@@ -410,16 +454,20 @@ class StaticLibraryModule(metaclass=ABCMeta):
         return None
 
     def get_objects(self, key) -> str:
-        return  f"{key}_OBJECTS = $({key}_CSRC:%.c=$({key}_OUTPUT)/%.o) $({key}_CSRC:%.s=$({key}_OUTPUT)/%.o)"
+        return f"{key}_OBJECTS = $({key}_CSRC:%.c=$({key}_OUTPUT)/%.o) $({key}_CSRC:%.s=$({key}_OUTPUT)/%.o)"
 
     def get_rule(self, key) -> str:
-        return  f"$({key}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,\"CC\",\"{key}\",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<"
+        return f'$({key}_OUTPUT)/%.o: %.c\n\t$(call logger-compile-lib,"CC","{key}",$<)\n\t@mkdir -p $(dir $@)\n\t$(CC) $(CFLAGS) $(INCS) -o $@ -c $<'
 
     def get_command(self, key) -> str:
-        return  f"$({key}_AR): $({key}_OBJECTS)\n\t$(call logger-compile,\"AR\",$@)\n\t$(AR) -rc $@ $(filter %.o,$({key}_OBJECTS))"
+        return f'$({key}_AR): $({key}_OBJECTS)\n\t$(call logger-compile,"AR",$@)\n\t$(AR) -rc $@ $(filter %.o,$({key}_OBJECTS))'
 
     def get_linker(self, key) -> str:
-        return "-L{0} -l{1}".format(self.output_dir, self.name, self._get_str_linked_opts(self.get_linker_opts()))
+        return "-L{0} -l{1} {2}".format(
+            self.output_dir,
+            self.name,
+            self._get_str_linked_opts(self.get_linker_opts()),
+        )
 
     def get_order(self):
         return 1
@@ -430,7 +478,8 @@ class StaticLibraryModule(metaclass=ABCMeta):
 
 class POJOModule(AbstractModule):
     def __init__(self, path):
-        super().__init__(path)
+        super().__init__()
+        self.path = path
         self.includes = []
         self.sources = []
         self.compiler_opts = None
@@ -446,7 +495,11 @@ class POJOModule(AbstractModule):
         return self.sources
 
     def getCompilerOpts(self):
-        return self.compiler_opts   
+        return self.compiler_opts
+
+    def get_path(self):
+        return self.path
+
 
 class BasicCModule(AbstractModule):
     """Basic C module, find all sources and includes in module path
@@ -454,6 +507,7 @@ class BasicCModule(AbstractModule):
     Args:
         path (str): path to module, _mk.py file.
     """
+
     def __init__(self):
         super().__init__()
 
@@ -462,29 +516,31 @@ class BasicCModule(AbstractModule):
 
         Returns:
             list: sources paths
-        """        
+        """
         return self.getAllSrcsC()
 
     def getIncs(self) -> list:
         """return list with all includes in module path
 
         Returns:
-            list: includes path 
-        """        
+            list: includes path
+        """
         return self.getAllIncsC()
 
+
 class ExternalModule(AbstractModule):
-    """The ExternalModule object that inherits from AbstractModule for include external pymaketool module 
+    """The ExternalModule object that inherits from AbstractModule for include external pymaketool module
 
     Args:
         path (str): path to module, _mk.py file.
 
     Attributes:
         remoteModule (AbstractModule): remote module object.
-    
+
     Raises:
             AttributeError: path is not valid
     """
+
     def __init__(self):
         super().__init__()
         try:
@@ -501,9 +557,9 @@ class ExternalModule(AbstractModule):
         except Exception as ex:
             log.exception(ex)
             exit(-1)
-    
+
     @abstractmethod
-    def getModulePath(self)->str:
+    def getModulePath(self) -> str:
         """Abstract methos to get string path of external module
 
         Returns:
@@ -532,7 +588,7 @@ class ExternalModule(AbstractModule):
             list: list of sources
         """
         return self.remoteModule.getSrcs()
-        
+
     def getIncs(self):
         """Call and return getIncs from remote module
 
@@ -540,7 +596,7 @@ class ExternalModule(AbstractModule):
             list: list of includes
         """
         return self.remoteModule.getIncs()
-    
+
     def getCompilerOpts(self):
         """Call and return getCompilerOpts from remote module
 
@@ -561,11 +617,13 @@ def ModuleClass(clazz):
 
     Args:
         clazz (class): Class inheritance of Module.AbstractModule
-    """    
+    """
     if issubclass(clazz, AbstractModule):
-        log.debug(f"class \'{clazz.__name__}\' is inheritance of Module.AbstractModule")
+        log.debug(f"class '{clazz.__name__}' is inheritance of Module.AbstractModule")
     else:
-        log.warning(f"class \'{clazz.__name__}\' in \'{__name__}\' not inheritance of Module.AbstractModule")
+        log.warning(
+            f"class '{clazz.__name__}' in '{__name__}' not inheritance of Module.AbstractModule"
+        )
 
     # classdir = str(clazz)
     # log.debug(f"class dir {classdir}")
@@ -584,8 +642,9 @@ def ModuleClass(clazz):
         log.debug(f"create global modules list")
         ModulesInstances = []
 
-    
-    log.debug(f"add new instance of ModuleClass \'{clazz.__name__}\' with path {clazz.__module__}")
+    log.debug(
+        f"add new instance of ModuleClass '{clazz.__name__}' with path {clazz.__module__}"
+    )
     ModulesInstances.append(obj)
 
 
