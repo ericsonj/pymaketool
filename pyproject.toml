@@ -1,6 +1,6 @@
 [project]
 name = "pymaketool"
-version = "3.0.0-rc1"
+version = "3.0.0-rc.2"
 description = ""
 authors = [{ name = "Ericson Joseph", email = "ericsonjoseph@gmail.com" }]
 readme = "README.md"
