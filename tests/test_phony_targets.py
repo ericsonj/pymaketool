@@ -142,8 +142,14 @@ class TestPhonyTargetsGenerator(unittest.TestCase):
             'test': {'script': ['pytest tests/', 'echo done']}
         })
         result = gen.process()
-        self.assertIn('\tpytest tests/', result)
-        self.assertIn('\techo done', result)
+        self.assertIn('\tpytest tests/ \\\n', result)
+        self.assertIn('\techo done\n', result)
+
+    def test_script_as_list_single_item_no_backslash(self):
+        gen = self._make_generator({'flash': {'script': ['openocd']}})
+        result = gen.process()
+        self.assertNotIn('\\', result)
+        self.assertIn('\topenocd\n', result)
 
     def test_logger_compile_call_present(self):
         gen = self._make_generator({'flash': {'script': 'openocd'}})
@@ -270,8 +276,20 @@ def getPhonyTargets():
 """)
         prelib.read_Makefilepy()
         content = self._targets_mk()
-        self.assertIn('\tpytest tests/', content)
-        self.assertIn('\techo done', content)
+        self.assertIn('\tpytest tests/ \\\n', content)
+        self.assertIn('\techo done\n', content)
+
+    def test_script_as_list_single_item_no_backslash(self):
+        self._write_makefile_py("""
+def getPhonyTargets():
+    return {
+        'flash': {'script': ['openocd']},
+    }
+""")
+        prelib.read_Makefilepy()
+        content = self._targets_mk()
+        self.assertNotIn('\\\n', content)
+        self.assertIn('\topenocd\n', content)
 
     def test_logkey_defaults_to_uppercase_name(self):
         self._write_makefile_py("""

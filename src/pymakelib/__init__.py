@@ -31,7 +31,31 @@ import inspect
 from abc import ABC,abstractmethod
 import logging
 from logging import Logger as SysLogger, PlaceHolder
-from typing import List
+from typing import List, TypedDict, Union
+
+class _PhonyTargetRequired(TypedDict):
+    script: Union[str, List[str]]
+
+class PhonyTarget(_PhonyTargetRequired, total=False):
+    deps: Union[str, List[str]]
+    logkey: str
+
+
+__all__ = [
+    # Project-level configuration (Makefile.py)
+    "AbstractMake",
+    "Makeclass",
+    # Compiler-options helpers
+    "MKVARS",
+    "Define",
+    "MOD_PATH",
+    # Phony target type
+    "PhonyTarget",
+    # Module system — module authors import this sub-module
+    "module",
+    # Programmatic API
+    "Pymaketool",
+]
 
 FORMATTER = logging.Formatter("%(levelname)-8s%(filename)s:%(lineno)d  %(message)s")
 
@@ -122,7 +146,7 @@ class AbstractMake(ABC):
     def getLinkerOpts(self, **kwargs) -> dict:
         pass
 
-    def getPhonyTargets(self) -> dict:
+    def getPhonyTargets(self) -> dict[str, PhonyTarget]:
         return {}
 
 

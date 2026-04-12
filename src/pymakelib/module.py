@@ -32,7 +32,7 @@ import importlib.util
 import copy
 import sys
 from pathlib import Path
-from typing import Final, List
+from typing import Final, List, Optional
 from . import preconts as K
 from . import git
 from abc import ABC, abstractmethod, ABCMeta
@@ -123,7 +123,7 @@ class Module:
         dirs = []
         for src in self.srcs:
             dirs.append(Path(str(src)).parent)
-        dirs = list(set(dirs))
+        dirs = sorted(set(dirs), key=str)
         return dirs
 
 
@@ -299,7 +299,7 @@ class AbstractModule(ABC):
         """
         return self.__class__.__name__
 
-    def get_path(self):
+    def get_path(self) -> str:
         """Get path of module in filesystem
 
         Returns:
@@ -307,8 +307,16 @@ class AbstractModule(ABC):
         """
         return f"{self.__module__}.{self.module_name}"
 
-    def init(self):
-        """Initialization of module"""
+    def init(self) -> Optional["StaticLibrary"]:
+        """Initialization of module.
+
+        Override to perform setup before sources are collected.
+        Return a :class:`StaticLibrary` instance to declare a static-library
+        dependency; return ``None`` (default) for regular modules.
+
+        Returns:
+            Optional[StaticLibrary]: static library descriptor, or None
+        """
         pass
 
     @abstractmethod
@@ -329,14 +337,15 @@ class AbstractModule(ABC):
         """
         pass
 
-    def findSrcs(self, src_type: List[str]) -> list:
+    def findSrcs(self, src_type: List[str]) -> List[Path]:
         """Util method for find sources in module path
 
         Args:
-            src_type (SrcType): Type of sources C, CPP or ASM
+            src_type (List[str]): File extensions to search for — use
+                :class:`SrcType` constants (e.g. ``SrcType.C``, ``SrcType.CPP``).
 
         Returns:
-            list: list of sources paths realtive to project
+            List[Path]: source file paths found under the module directory
         """
         log.debug(f"find srcs in {self.dir}")
         srcs = []
@@ -344,14 +353,15 @@ class AbstractModule(ABC):
             srcs += list(Path(self.dir).rglob("*" + ext))
         return srcs
 
-    def findIncs(self, inc_type: List[str]) -> list:
+    def findIncs(self, inc_type: List[str]) -> List[Path]:
         """Util method for find includes in module path
 
         Args:
-            inc_type (IncType): Type of includes C or CPP
+            inc_type (List[str]): File extensions to search for — use
+                :class:`IncType` constants (e.g. ``IncType.C``, ``IncType.CPP``).
 
         Returns:
-            list: list of includes paths realtive to project
+            List[Path]: unique include directory paths found under the module directory
         """
         incsfiles = []
         for ext in inc_type:
@@ -364,46 +374,64 @@ class AbstractModule(ABC):
         incs = list(dict.fromkeys(incs))
         return incs
 
-    def getAllSrcsC(self) -> list:
+    def getAllSrcsC(self) -> List[Path]:
         """Util method for get all sources in module, type C
 
         Returns:
-            list: list of sources paths realtive to project
+            List[Path]: source file paths found under the module directory
         """
         return self.findSrcs(SrcType.C)
 
-    def getAllIncsC(self) -> list:
-        """Ütil method for get all includes in module, type C
+    def getAllIncsC(self) -> List[Path]:
+        """Util method for get all includes in module, type C
 
         Returns:
-            list: list of includes paths realtive to project
+            List[Path]: unique include directory paths found under the module directory
         """
         return self.findIncs(IncType.C)
 
-    def getCompilerOpts(self):
-        """Get special compiler options for module"""
-        pass
+    def getCompilerOpts(self) -> Optional[dict]:
+        """Get per-module compiler options.
 
-    def getSrcsWithPath(self, srcs: list) -> list:
-        """Prefix each source path with module_path.
-
-        Args:
-            srcs (list): list of source filenames (relative to the module dir)
+        Override to return a compiler-options dict that is merged with the
+        project-level options for sources in this module only.  Return
+        ``None`` (default) to apply no extra options.
 
         Returns:
-            list: list of paths prefixed with module_path
+            Optional[dict]: compiler options dict, or None
+        """
+        pass
+
+    def getSrcsWithPath(self, srcs: List[str]) -> List[str]:
+        """Prefix each source path with module_path.
+
+        Use this instead of bare filenames so the generated Makefile paths are
+        relative to the project root rather than the module directory.
+
+        Args:
+            srcs (List[str]): source filenames relative to the module directory
+                (e.g. ``['main.c', 'util.c']``).
+
+        Returns:
+            List[str]: paths prefixed with ``module_path``
+                (e.g. ``['app/main.c', 'app/util.c']``).
         """
         return [self.module_path + s for s in srcs]
 
-    def getIncsWithPath(self, incs: list = None) -> list:
-        """Prefix each include path with module_path.
+    def getIncsWithPath(self, incs: Optional[List[str]] = None) -> List[str]:
+        """Prefix each include directory with module_path.
+
+        Use this instead of bare directory names so the generated ``-I`` flags
+        are relative to the project root rather than the module directory.
 
         Args:
-            incs (list, optional): list of include dirs relative to the module dir.
-                If omitted, returns [module_path].
+            incs (Optional[List[str]]): include directories relative to the
+                module directory.  If omitted, returns ``[module_path]`` — i.e.
+                the module directory itself becomes an include root.
 
         Returns:
-            list: list of paths prefixed with module_path
+            List[str]: paths prefixed with ``module_path``
+                (e.g. ``['app/include/']``).
         """
         if incs is None:
             return [self.module_path]

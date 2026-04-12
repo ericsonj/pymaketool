@@ -573,8 +573,11 @@ def read_Makefilepy(workpath=''):
                 script_lines = _script_to_lines(cfg.get('script', []))
                 targetsmk.write(f"\n{name}: {deps}\n")
                 targetsmk.write(f'\t$(call logger-compile,"{logkey}",$@)\n')
-                for cmd in script_lines:
-                    targetsmk.write(f"\t{cmd}\n")
+                for i, cmd in enumerate(script_lines):
+                    if i < len(script_lines) - 1:
+                        targetsmk.write(f"\t{cmd} \\\n")
+                    else:
+                        targetsmk.write(f"\t{cmd}\n")
             if compOpts:
                 compOpts['PHONY_TARGETS'] = phony_targets
     except Exception as e:

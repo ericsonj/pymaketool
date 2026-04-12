@@ -309,7 +309,10 @@ class PhonyTargetsGenerator(Generator):
             script_lines = _script_to_lines(cfg.get('script', []))
             self.write(f"\n{name}: {deps}\n")
             self.write(f'\t$(call logger-compile,"{logkey}",$@)\n')
-            for cmd in script_lines:
-                self.write(f"\t{cmd}\n")
+            for i, cmd in enumerate(script_lines):
+                if i < len(script_lines) - 1:
+                    self.write(f"\t{cmd} \\\n")
+                else:
+                    self.write(f"\t{cmd}\n")
 
         return ''.join(self.output)

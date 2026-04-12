@@ -142,7 +142,7 @@ def main():
         print(f"Generator: {gheader} > {fileout}")
         plib.readGenHeader(gheader)
 
-    modulesPaths = list(Path("./").rglob("*[.|_]mk.py"))
+    modulesPaths = sorted(Path("./").rglob("*[.|_]mk.py"))
     # Load modules
     for filename in modulesPaths:
         mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal, project_root=Path(".").resolve())
@@ -199,7 +199,7 @@ def main():
         if mod.staticLib:
             prefixSrcs = mod.staticLib.name.upper() + "_"
 
-        for src in mod.srcs:
+        for src in sorted(mod.srcs, key=str):
             if str(src).endswith(".c"):
                 srcsfile.write("{}CSRC += {}\n".format(prefixSrcs, src))
             elif str(src).endswith(".cpp"):
@@ -210,12 +210,12 @@ def main():
         srcsfile.write("\n")
 
         if not mod.staticLib:
-            for d in mod.getDirs():
+            for d in sorted(mod.getDirs(), key=str):
                 srcsfile.write("SRC_DIRS += {}\n".format(str(d)))
 
         srcsfile.write("\n")
 
-        for inc in mod.incs:
+        for inc in sorted(mod.incs, key=str):
             if inc:
                 srcsfile.write("INCS += -I{}\n".format(inc))
                 includes.append(inc)
@@ -224,7 +224,7 @@ def main():
 
         if mod.flags:
             if mod.staticLib:
-                for src in mod.srcs:
+                for src in sorted(mod.srcs, key=str):
                     objs = (
                         str(src)
                         .replace(".c", ".o")
@@ -240,7 +240,7 @@ def main():
                         )
                     )
             else:
-                for src in mod.srcs:
+                for src in sorted(mod.srcs, key=str):
                     objs = str(src).replace(".cpp", ".o")
                     objs = objs.replace(".c", ".o")
                     objs = (
