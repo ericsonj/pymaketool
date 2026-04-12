@@ -269,6 +269,22 @@ def readModule(modPath, compilerOpts, goals=None, project_root: Path = None):
     return modules
 
 
+def _deps_to_str(deps) -> str:
+    if isinstance(deps, list):
+        return ' '.join(deps)
+    elif isinstance(deps, str):
+        return deps
+    return ''
+
+
+def _script_to_lines(script) -> list:
+    if isinstance(script, list):
+        return script
+    elif isinstance(script, str):
+        return [script]
+    return []
+
+
 def list2str(l):
     return ' '.join(l)
 
@@ -396,6 +412,16 @@ def read_Makefilepy(workpath=''):
         except Exception as ex:
             log.exception(ex)
             exit(-1)
+
+    def wprGetPhonyTargets():
+        try:
+            if projectInstance and hasattr(projectInstance, K.MK_F_GETPHONYTARGETS):
+                return projectInstance.getPhonyTargets()
+            elif hasattr(mod, K.MK_F_GETPHONYTARGETS):
+                return getattr(mod, K.MK_F_GETPHONYTARGETS)()
+        except Exception as ex:
+            log.exception(ex)
+        return {}
 
     makevars = open(K.VARS_MK, 'w')
 
@@ -533,6 +559,24 @@ def read_Makefilepy(workpath=''):
                 targetsmk.write('\trm -rf {}\n'.format(' '.join(targetlist)))
                 if compOpts:
                     compOpts['TARGETS'] = targets
+    except Exception as e:
+        log.exception(e)
+
+    try:
+        phony_targets = wprGetPhonyTargets()
+        if isinstance(phony_targets, dict) and phony_targets:
+            names = ' '.join(phony_targets.keys())
+            targetsmk.write(f"\n.PHONY: {names}\n")
+            for name, cfg in phony_targets.items():
+                deps = _deps_to_str(cfg.get('deps', []))
+                logkey = cfg.get('logkey', name.upper())
+                script_lines = _script_to_lines(cfg.get('script', []))
+                targetsmk.write(f"\n{name}: {deps}\n")
+                targetsmk.write(f'\t$(call logger-compile,"{logkey}",$@)\n')
+                for cmd in script_lines:
+                    targetsmk.write(f"\t{cmd}\n")
+            if compOpts:
+                compOpts['PHONY_TARGETS'] = phony_targets
     except Exception as e:
         log.exception(e)
 

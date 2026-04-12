@@ -105,7 +105,7 @@ class AbstractMake(ABC):
     @abstractmethod
     def getProjectSettings(self, **kwargs) -> dict:
         pass
-    
+
     @abstractmethod
     def getTargetsScript(self, **kwargs) -> dict:
         pass
@@ -121,6 +121,9 @@ class AbstractMake(ABC):
     @abstractmethod
     def getLinkerOpts(self, **kwargs) -> dict:
         pass
+
+    def getPhonyTargets(self) -> dict:
+        return {}
 
 
 def Makeclass(clazz):

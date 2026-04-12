@@ -255,4 +255,27 @@ def getLinkerOpts():
         ],
         'LIBRARIES': LIBRARIES
     }
+
+
+def getPhonyTargets():
+    PROJECT_NAME = basename(os.getcwd())
+    FOLDER_OUT = 'Release/'
+    TARGET = FOLDER_OUT + PROJECT_NAME
+
+    return {
+        # 'flash': {
+        #     'deps': ['all'],
+        #     'logkey': 'FLASH',
+        #     'script': 'openocd -f board/board.cfg -c "program ' + TARGET + ' verify reset exit"'
+        # },
+        # 'size': {
+        #     'deps': ['all'],
+        #     'logkey': 'SIZE',
+        #     'script': ['$(SIZE) --format=berkeley ' + TARGET]
+        # },
+        # 'erase': {
+        #     'logkey': 'ERASE',
+        #     'script': 'openocd -f board/board.cfg -c "init; halt; flash erase_sector 0 0 last; shutdown"'
+        # },
+    }
 """

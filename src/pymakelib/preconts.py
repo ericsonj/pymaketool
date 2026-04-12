@@ -49,6 +49,7 @@ MK_F_GETCOMPILERSET     = 'getCompilerSet'
 MK_F_GETCOMPILEROPTS    = 'getCompilerOpts'
 MK_F_GETLINKEROPTS      = 'getLinkerOpts'
 MK_F_GETTARGETSSCRIPT   = 'getTargetsScript'
+MK_F_GETPHONYTARGETS    = 'getPhonyTargets'
 
 
 PROJSETT_PROJECTNAME    = 'PROJECT_NAME'
