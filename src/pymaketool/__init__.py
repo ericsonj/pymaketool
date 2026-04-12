@@ -67,8 +67,12 @@ def main():
     goal = args.goal
 
     if args.project_name:
+        # Default subdir for new projects
+        subdir = K.MAKEFILE_SUBDIR_CANDIDATES[0]  # 'pymake'
+        subdir_path = Path(subdir)
+
         fproject = open(".project", "w")
-        print("Init {0} project".format(args.project_name))
+        print("Init {0} project (layout: {1}/)".format(args.project_name, subdir))
         fproject.write(eclipse_files.FILE_PROJECT.format(args.project_name))
         fproject.close()
         try:
@@ -81,15 +85,20 @@ def main():
         except Exception as e:
             log.exception(e)
 
+        try:
+            subdir_path.mkdir(exist_ok=True)
+        except Exception as e:
+            log.exception(e)
+
         fileset = [
             [K.PYMAKEPROJ + "/.cproject_template", eclipse_files.FILE_CPROJECT_TEMP],
             [
                 K.PYMAKEPROJ + "/.language.settings_template",
                 eclipse_files.FILE_LANGUAJE_SETTING_XML,
             ],
-            ["Makefile", make_files.FILE_MAKEFILE],
-            ["makefile.mk", make_files.FILE_MAKEFILE_MK],
-            ["Makefile.py", make_files.FILE_MAKEFILE_PY],
+            ["Makefile", make_files.get_makefile_content(subdir=subdir)],
+            [str(subdir_path / K.MAKEFILE_MK), make_files.get_makefile_mk_content(subdir=subdir)],
+            [str(subdir_path / K.MAKEFILE_PY), make_files.FILE_MAKEFILE_PY],
         ]
 
         for f in fileset:
@@ -123,7 +132,15 @@ def main():
     # Add project path to sys.path for users scripts
     sys.path.append(str(os.getcwd()))
 
-    projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
+    import warnings
+    project_root = Path(".").resolve()
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        config_dir, layout_mode = plib.resolve_config_dir(project_root)
+    for w in caught_warnings:
+        print(str(w.message), file=sys.stderr)
+
+    projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy(config_dir=config_dir)
 
     globalSettings = {
         "PROJECT_SETTINGS": projSettings,
@@ -155,7 +172,7 @@ def main():
                 break
 
     # Write CSRC
-    srcsfile = open("srcs.mk", "w")
+    srcsfile = open(config_dir / K.SRCS_MK, "w")
 
     includes = []
 

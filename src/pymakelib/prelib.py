@@ -353,8 +353,38 @@ def read_Makefilepy_obj(workpath='') -> AbstractMake:
     return projectInstance
 
 
-def read_Makefilepy(workpath=''):
-    makefilepy_path = workpath + K.MAKEFILE_PY
+def resolve_config_dir(project_root: Path) -> tuple:
+    """Detect whether the project uses the new subdirectory layout or the legacy root layout.
+
+    Returns (config_dir: Path, mode: str) where mode is 'subdir' or 'legacy'.
+    Raises FileNotFoundError if Makefile.py cannot be found in either location.
+    """
+    import warnings
+    for candidate in K.MAKEFILE_SUBDIR_CANDIDATES:
+        subdir = project_root / candidate
+        if (subdir / K.MAKEFILE_PY).exists():
+            return subdir, 'subdir'
+    if (project_root / K.MAKEFILE_PY).exists():
+        warnings.warn(
+            f"\n[pymaketool] Makefile.py found at project root (legacy layout).\n"
+            f"  This layout is deprecated. Consider moving your build config into a "
+            f"pymake/ subdirectory.\n"
+            f"  See: https://github.com/ericsonj/pymaketool",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return project_root, 'legacy'
+    raise FileNotFoundError(
+        f"No {K.MAKEFILE_PY} found in project root or known subdirectories "
+        f"{K.MAKEFILE_SUBDIR_CANDIDATES}."
+    )
+
+
+def read_Makefilepy(workpath='', config_dir: Path = None):
+    if config_dir is not None:
+        makefilepy_path = str(config_dir / K.MAKEFILE_PY)
+    else:
+        makefilepy_path = workpath + K.MAKEFILE_PY
     lib = importlib.util.spec_from_file_location(makefilepy_path, makefilepy_path)
     mod = importlib.util.module_from_spec(lib)
     lib.loader.exec_module(mod)
@@ -423,7 +453,8 @@ def read_Makefilepy(workpath=''):
             log.exception(ex)
         return {}
 
-    makevars = open(K.VARS_MK, 'w')
+    _out_dir = config_dir if config_dir is not None else Path(workpath) if workpath else Path('.')
+    makevars = open(_out_dir / K.VARS_MK, 'w')
 
     projSettings = None
     compSet = None
@@ -509,7 +540,7 @@ def read_Makefilepy(workpath=''):
 
     makevars.close()
 
-    targetsmk = open('targets.mk', 'w')
+    targetsmk = open(_out_dir / K.TARGETS_MK, 'w')
 
     try:
         targets = wprGetTargetScript()
