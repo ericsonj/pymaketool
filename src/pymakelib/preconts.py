@@ -30,9 +30,15 @@ PYMAKEPROJ  = '.pymakeproj'
 MAKEFILE_PY = 'Makefile.py'
 VARS_MK     = 'vars.mk'
 TARGETS_MK  = 'targets.mk'
+SRCS_MK     = 'srcs.mk'
+MAKEFILE_MK = 'makefile.mk'
 ECLIPSE_SETTING = '.settings'
 
 MODULEIGNORE_FILE   = '.moduleignore'
+
+# Subdirectory layout: ordered list of candidate folder names to scan.
+# The first match wins. 'pymake' is the preferred/default name.
+MAKEFILE_SUBDIR_CANDIDATES = ['pymake']
 
 MOD_WORKSPACE       = 'modPath'
 MOD_COMPILER_OPTS   = 'compilerOpts'
@@ -49,6 +55,7 @@ MK_F_GETCOMPILERSET     = 'getCompilerSet'
 MK_F_GETCOMPILEROPTS    = 'getCompilerOpts'
 MK_F_GETLINKEROPTS      = 'getLinkerOpts'
 MK_F_GETTARGETSSCRIPT   = 'getTargetsScript'
+MK_F_GETPHONYTARGETS    = 'getPhonyTargets'
 
 
 PROJSETT_PROJECTNAME    = 'PROJECT_NAME'

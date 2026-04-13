@@ -34,8 +34,6 @@ Command: pynewproject CLinuxGCC author=\\\"Author\\\" project_name=project
             'Makefile',
             'Makefile.py',
             ".project",
-            ".pymakeproj/.cproject_template",
-            ".pymakeproj/.language.settings_template",
             ".settings",
         ]
 

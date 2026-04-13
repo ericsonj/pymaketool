@@ -67,29 +67,23 @@ def main():
     goal = args.goal
 
     if args.project_name:
+        # Default subdir for new projects
+        subdir = K.MAKEFILE_SUBDIR_CANDIDATES[0]  # 'pymake'
+        subdir_path = Path(subdir)
+
         fproject = open(".project", "w")
-        print("Init {0} project".format(args.project_name))
+        print("Init {0} project (layout: {1}/)".format(args.project_name, subdir))
         fproject.write(eclipse_files.FILE_PROJECT.format(args.project_name))
         fproject.close()
         try:
-            os.mkdir(K.PYMAKEPROJ)
-        except Exception as e:
-            log.exception(e)
-
-        try:
-            os.mkdir(K.ECLIPSE_SETTING)
+            subdir_path.mkdir(exist_ok=True)
         except Exception as e:
             log.exception(e)
 
         fileset = [
-            [K.PYMAKEPROJ + "/.cproject_template", eclipse_files.FILE_CPROJECT_TEMP],
-            [
-                K.PYMAKEPROJ + "/.language.settings_template",
-                eclipse_files.FILE_LANGUAJE_SETTING_XML,
-            ],
-            ["Makefile", make_files.FILE_MAKEFILE],
-            ["makefile.mk", make_files.FILE_MAKEFILE_MK],
-            ["Makefile.py", make_files.FILE_MAKEFILE_PY],
+            ["Makefile", make_files.get_makefile_content(subdir=subdir)],
+            [str(subdir_path / K.MAKEFILE_MK), make_files.get_makefile_mk_content(subdir=subdir)],
+            [str(subdir_path / K.MAKEFILE_PY), make_files.FILE_MAKEFILE_PY],
         ]
 
         for f in fileset:
@@ -108,10 +102,6 @@ def main():
     # ------------------------------------------------------
     # ------------------------------------------------------
 
-    if not os.path.exists(K.PYMAKEPROJ):
-        print("Not a pymaketool project")
-        sys.exit()
-
     if not goal:
         print("pymaketool: error: Add a goal (target)")
         sys.exit()
@@ -123,7 +113,19 @@ def main():
     # Add project path to sys.path for users scripts
     sys.path.append(str(os.getcwd()))
 
-    projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
+    import warnings
+    project_root = Path(".").resolve()
+    try:
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            config_dir, layout_mode = plib.resolve_config_dir(project_root)
+        for w in caught_warnings:
+            print(str(w.message), file=sys.stderr)
+    except FileNotFoundError:
+        print("Not a pymaketool project")
+        sys.exit()
+
+    projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy(config_dir=config_dir)
 
     globalSettings = {
         "PROJECT_SETTINGS": projSettings,
@@ -142,7 +144,7 @@ def main():
         print(f"Generator: {gheader} > {fileout}")
         plib.readGenHeader(gheader)
 
-    modulesPaths = list(Path("./").rglob("*[.|_]mk.py"))
+    modulesPaths = sorted(Path("./").rglob("*[.|_]mk.py"))
     # Load modules
     for filename in modulesPaths:
         mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal, project_root=Path(".").resolve())
@@ -155,7 +157,7 @@ def main():
                 break
 
     # Write CSRC
-    srcsfile = open("srcs.mk", "w")
+    srcsfile = open(config_dir / K.SRCS_MK, "w")
 
     includes = []
 
@@ -166,6 +168,7 @@ def main():
         return header
 
     log.debug("**load modules**")
+    all_srcs = []
     modules = sorted(modules, key=lambda mod: mod.orden)
     for mod in modules:
         if mod.isEmpty():
@@ -199,23 +202,24 @@ def main():
         if mod.staticLib:
             prefixSrcs = mod.staticLib.name.upper() + "_"
 
-        for src in mod.srcs:
+        for src in sorted(mod.srcs, key=str):
             if str(src).endswith(".c"):
                 srcsfile.write("{}CSRC += {}\n".format(prefixSrcs, src))
             elif str(src).endswith(".cpp"):
                 srcsfile.write("{}CXXSRC += {}\n".format(prefixSrcs, src))
             elif str(src).endswith((".s", ".S", ".asm")):
                 srcsfile.write("{}ASSRC += {}\n".format(prefixSrcs, src))
+            all_srcs.append(str(src))
 
         srcsfile.write("\n")
 
         if not mod.staticLib:
-            for d in mod.getDirs():
+            for d in sorted(mod.getDirs(), key=str):
                 srcsfile.write("SRC_DIRS += {}\n".format(str(d)))
 
         srcsfile.write("\n")
 
-        for inc in mod.incs:
+        for inc in sorted(mod.incs, key=str):
             if inc:
                 srcsfile.write("INCS += -I{}\n".format(inc))
                 includes.append(inc)
@@ -224,7 +228,7 @@ def main():
 
         if mod.flags:
             if mod.staticLib:
-                for src in mod.srcs:
+                for src in sorted(mod.srcs, key=str):
                     objs = (
                         str(src)
                         .replace(".c", ".o")
@@ -240,7 +244,7 @@ def main():
                         )
                     )
             else:
-                for src in mod.srcs:
+                for src in sorted(mod.srcs, key=str):
                     objs = str(src).replace(".cpp", ".o")
                     objs = objs.replace(".c", ".o")
                     objs = (
@@ -348,6 +352,9 @@ def main():
         "C_INCLUDES": strIncs,
         "C_SYMBOLS": compilerOpts["MACROS"],
         "C_EXCLUDE": listToExclude,
+        "C_SRCS": all_srcs,
+        "C_COMPILER_OPTS": compilerOpts,
+        "C_CONFIG_DIR": str(config_dir),
     }
 
     try:

@@ -1,9 +1,9 @@
-from os import write
 from pathlib import Path
 from . import Define as D
 from . import preconts as K
 from . import Pymaketool
 from .module import AbstractModule, StaticLibraryModule
+from .prelib import _deps_to_str, _script_to_lines
 from . import Logger
 from abc import ABC, abstractmethod
 
@@ -286,5 +286,33 @@ class TargetsGenerator(Generator):
         for key in keylist:
             self.write(f" $({key})")
         self.write('\n')
+
+        return ''.join(self.output)
+
+
+class PhonyTargetsGenerator(Generator):
+
+    def __init__(self, project: Pymaketool):
+        super().__init__(None, project)
+
+    def process(self) -> str:
+        phony_targets = self.project.compilerOpts.get('PHONY_TARGETS', {})
+        if not phony_targets:
+            return ''
+
+        names = ' '.join(phony_targets.keys())
+        self.write(f"\n.PHONY: {names}\n")
+
+        for name, cfg in phony_targets.items():
+            deps = _deps_to_str(cfg.get('deps', []))
+            logkey = cfg.get('logkey', name.upper())
+            script_lines = _script_to_lines(cfg.get('script', []))
+            self.write(f"\n{name}: {deps}\n")
+            self.write(f'\t$(call logger-compile,"{logkey}",$@)\n')
+            for i, cmd in enumerate(script_lines):
+                if i < len(script_lines) - 1:
+                    self.write(f"\t{cmd} \\\n")
+                else:
+                    self.write(f"\t{cmd}\n")
 
         return ''.join(self.output)

@@ -17,6 +17,7 @@ packages = [
     { include = "pybuildanalyzer", from = "src" },
     { include = "pybuildanalyzer2", from = "src" },
     { include = "pymaketool", from = "src" },
+    { include = "pymakemigrate", from = "src" },
 ]
 
 [tool.poetry.scripts]
@@ -26,6 +27,7 @@ pymaketesting = "pymaketesting.__main__:main"
 pymakedot = "pymakedot.__main__:main"
 pybuildanalyzer = "pybuildanalyzer.__main__:main"
 pybuildanalyzer2 = "pybuildanalyzer2.__main__:main"
+pymakemigrate = "pymakemigrate.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -75,3 +77,8 @@ skip_covered = false
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"

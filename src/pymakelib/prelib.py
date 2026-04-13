@@ -269,6 +269,22 @@ def readModule(modPath, compilerOpts, goals=None, project_root: Path = None):
     return modules
 
 
+def _deps_to_str(deps) -> str:
+    if isinstance(deps, list):
+        return ' '.join(deps)
+    elif isinstance(deps, str):
+        return deps
+    return ''
+
+
+def _script_to_lines(script) -> list:
+    if isinstance(script, list):
+        return script
+    elif isinstance(script, str):
+        return [script]
+    return []
+
+
 def list2str(l):
     return ' '.join(l)
 
@@ -337,8 +353,38 @@ def read_Makefilepy_obj(workpath='') -> AbstractMake:
     return projectInstance
 
 
-def read_Makefilepy(workpath=''):
-    makefilepy_path = workpath + K.MAKEFILE_PY
+def resolve_config_dir(project_root: Path) -> tuple:
+    """Detect whether the project uses the new subdirectory layout or the legacy root layout.
+
+    Returns (config_dir: Path, mode: str) where mode is 'subdir' or 'legacy'.
+    Raises FileNotFoundError if Makefile.py cannot be found in either location.
+    """
+    import warnings
+    for candidate in K.MAKEFILE_SUBDIR_CANDIDATES:
+        subdir = project_root / candidate
+        if (subdir / K.MAKEFILE_PY).exists():
+            return subdir, 'subdir'
+    if (project_root / K.MAKEFILE_PY).exists():
+        warnings.warn(
+            f"\n[pymaketool] Makefile.py found at project root (legacy layout).\n"
+            f"  This layout is deprecated. Consider moving your build config into a "
+            f"pymake/ subdirectory.\n"
+            f"  See: https://github.com/ericsonj/pymaketool",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return project_root, 'legacy'
+    raise FileNotFoundError(
+        f"No {K.MAKEFILE_PY} found in project root or known subdirectories "
+        f"{K.MAKEFILE_SUBDIR_CANDIDATES}."
+    )
+
+
+def read_Makefilepy(workpath='', config_dir: Path = None):
+    if config_dir is not None:
+        makefilepy_path = str(config_dir / K.MAKEFILE_PY)
+    else:
+        makefilepy_path = workpath + K.MAKEFILE_PY
     lib = importlib.util.spec_from_file_location(makefilepy_path, makefilepy_path)
     mod = importlib.util.module_from_spec(lib)
     lib.loader.exec_module(mod)
@@ -397,7 +443,18 @@ def read_Makefilepy(workpath=''):
             log.exception(ex)
             exit(-1)
 
-    makevars = open(K.VARS_MK, 'w')
+    def wprGetPhonyTargets():
+        try:
+            if projectInstance and hasattr(projectInstance, K.MK_F_GETPHONYTARGETS):
+                return projectInstance.getPhonyTargets()
+            elif hasattr(mod, K.MK_F_GETPHONYTARGETS):
+                return getattr(mod, K.MK_F_GETPHONYTARGETS)()
+        except Exception as ex:
+            log.exception(ex)
+        return {}
+
+    _out_dir = config_dir if config_dir is not None else Path(workpath) if workpath else Path('.')
+    makevars = open(_out_dir / K.VARS_MK, 'w')
 
     projSettings = None
     compSet = None
@@ -483,7 +540,7 @@ def read_Makefilepy(workpath=''):
 
     makevars.close()
 
-    targetsmk = open('targets.mk', 'w')
+    targetsmk = open(_out_dir / K.TARGETS_MK, 'w')
 
     try:
         targets = wprGetTargetScript()
@@ -533,6 +590,27 @@ def read_Makefilepy(workpath=''):
                 targetsmk.write('\trm -rf {}\n'.format(' '.join(targetlist)))
                 if compOpts:
                     compOpts['TARGETS'] = targets
+    except Exception as e:
+        log.exception(e)
+
+    try:
+        phony_targets = wprGetPhonyTargets()
+        if isinstance(phony_targets, dict) and phony_targets:
+            names = ' '.join(phony_targets.keys())
+            targetsmk.write(f"\n.PHONY: {names}\n")
+            for name, cfg in phony_targets.items():
+                deps = _deps_to_str(cfg.get('deps', []))
+                logkey = cfg.get('logkey', name.upper())
+                script_lines = _script_to_lines(cfg.get('script', []))
+                targetsmk.write(f"\n{name}: {deps}\n")
+                targetsmk.write(f'\t$(call logger-compile,"{logkey}",$@)\n')
+                for i, cmd in enumerate(script_lines):
+                    if i < len(script_lines) - 1:
+                        targetsmk.write(f"\t{cmd} \\\n")
+                    else:
+                        targetsmk.write(f"\t{cmd}\n")
+            if compOpts and isinstance(compOpts, dict):
+                compOpts['PHONY_TARGETS'] = phony_targets
     except Exception as e:
         log.exception(e)
 
