@@ -76,26 +76,11 @@ def main():
         fproject.write(eclipse_files.FILE_PROJECT.format(args.project_name))
         fproject.close()
         try:
-            os.mkdir(K.PYMAKEPROJ)
-        except Exception as e:
-            log.exception(e)
-
-        try:
-            os.mkdir(K.ECLIPSE_SETTING)
-        except Exception as e:
-            log.exception(e)
-
-        try:
             subdir_path.mkdir(exist_ok=True)
         except Exception as e:
             log.exception(e)
 
         fileset = [
-            [K.PYMAKEPROJ + "/.cproject_template", eclipse_files.FILE_CPROJECT_TEMP],
-            [
-                K.PYMAKEPROJ + "/.language.settings_template",
-                eclipse_files.FILE_LANGUAJE_SETTING_XML,
-            ],
             ["Makefile", make_files.get_makefile_content(subdir=subdir)],
             [str(subdir_path / K.MAKEFILE_MK), make_files.get_makefile_mk_content(subdir=subdir)],
             [str(subdir_path / K.MAKEFILE_PY), make_files.FILE_MAKEFILE_PY],
@@ -117,10 +102,6 @@ def main():
     # ------------------------------------------------------
     # ------------------------------------------------------
 
-    if not os.path.exists(K.PYMAKEPROJ):
-        print("Not a pymaketool project")
-        sys.exit()
-
     if not goal:
         print("pymaketool: error: Add a goal (target)")
         sys.exit()
@@ -134,11 +115,15 @@ def main():
 
     import warnings
     project_root = Path(".").resolve()
-    with warnings.catch_warnings(record=True) as caught_warnings:
-        warnings.simplefilter("always")
-        config_dir, layout_mode = plib.resolve_config_dir(project_root)
-    for w in caught_warnings:
-        print(str(w.message), file=sys.stderr)
+    try:
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            config_dir, layout_mode = plib.resolve_config_dir(project_root)
+        for w in caught_warnings:
+            print(str(w.message), file=sys.stderr)
+    except FileNotFoundError:
+        print("Not a pymaketool project")
+        sys.exit()
 
     projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy(config_dir=config_dir)
 

@@ -36,6 +36,7 @@
 #   <!--wildcard_cpp_symbols-->     : C++ Symbols
 
 # listconf = {'C_INCLUDES': [...], 'C_SYMBOLS' : [...], 'CPP_INCLUDES': [...], 'CPP_SYMBOLS': [...]}
+import warnings
 from pathlib import Path
 from . import preconts as K
 from . import Define as D
@@ -43,10 +44,7 @@ import os.path
 from os import path
 
 
-CPROJECT_TEMPLATE = K.PYMAKEPROJ + '/.cproject_template'
 CPROJECT = '.cproject'
-
-LANGUAGE_SETTINGS_TEMPLATE = K.PYMAKEPROJ + '/.language.settings_template'
 LANGUAGE_SETTINGS = '.settings/language.settings.xml'
 
 LANGUAGE_SETTING_PROVIDER = """
@@ -62,10 +60,14 @@ WILDCARD_C_EXCLUDE = '<!--wildcard_c_exclude-->'
 
 WILDCARD_LS_PROVIDER = '<!--wildcard_ls_provider-->'
 
-def generate_cproject(listconf: dict):
+def generate_cproject(listconf: dict, template_path: str = None):
+    if template_path is None:
+        raise ValueError(
+            "template_path is required. EclipseAddon resolves the template automatically."
+        )
     print('Generate .cproject')
     try:
-        cproject_template = open(CPROJECT_TEMPLATE, 'r')
+        cproject_template = open(template_path, 'r')
         cproject = open(CPROJECT, 'w')
 
         for line in cproject_template:
@@ -87,7 +89,11 @@ def generate_cproject(listconf: dict):
         cproject_template.close()
         cproject.close()
 
-def generate_languageSettings(compilerSettings: dict):
+def generate_languageSettings(compilerSettings: dict, template_path: str = None):
+    if template_path is None:
+        raise ValueError(
+            "template_path is required. EclipseAddon resolves the template automatically."
+        )
     print('Generate .setting/language.settings.xml')
     try:
         try:
@@ -95,8 +101,8 @@ def generate_languageSettings(compilerSettings: dict):
                 os.mkdir(K.ECLIPSE_SETTING)
         except Exception as e:
             print(e)
-            
-        langsett_template = open(LANGUAGE_SETTINGS_TEMPLATE, 'r')
+
+        langsett_template = open(template_path, 'r')
         langsett = open(LANGUAGE_SETTINGS, 'w')
 
         for line in langsett_template:
