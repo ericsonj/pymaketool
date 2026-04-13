@@ -183,6 +183,7 @@ def main():
         return header
 
     log.debug("**load modules**")
+    all_srcs = []
     modules = sorted(modules, key=lambda mod: mod.orden)
     for mod in modules:
         if mod.isEmpty():
@@ -223,6 +224,7 @@ def main():
                 srcsfile.write("{}CXXSRC += {}\n".format(prefixSrcs, src))
             elif str(src).endswith((".s", ".S", ".asm")):
                 srcsfile.write("{}ASSRC += {}\n".format(prefixSrcs, src))
+            all_srcs.append(str(src))
 
         srcsfile.write("\n")
 
@@ -365,6 +367,9 @@ def main():
         "C_INCLUDES": strIncs,
         "C_SYMBOLS": compilerOpts["MACROS"],
         "C_EXCLUDE": listToExclude,
+        "C_SRCS": all_srcs,
+        "C_COMPILER_OPTS": compilerOpts,
+        "C_CONFIG_DIR": str(config_dir),
     }
 
     try:
