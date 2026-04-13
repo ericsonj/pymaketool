@@ -16,8 +16,8 @@ def _resolve_template(name: str, config_dir: Path) -> str:
     3. Bundled package resource       — zero-setup default, always available
 
     Returns the resolved path as a string suitable for ``open()``.
-    For the bundled resource, the file is copied to a temp path and that path
-    is returned so callers can treat all cases uniformly.
+    For the bundled resource, the file is written into ``config_dir`` and that
+    path is returned so callers can treat all cases uniformly.
     """
     # 1. config_dir (e.g. pymake/)
     candidate = config_dir / name
