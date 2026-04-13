@@ -67,27 +67,23 @@ def generate_cproject(listconf: dict, template_path: str = None):
         )
     print('Generate .cproject')
     try:
-        cproject_template = open(template_path, 'r')
-        cproject = open(CPROJECT, 'w')
-
-        for line in cproject_template:
-            if(line.strip() == WILDCARD_C_INCLUDES):
-                if listconf['C_INCLUDES']:
-                    cproject.write((writeXmlIncludes(listconf['C_INCLUDES'])))
-            if(line.strip() == WILDCARD_C_SYMBOLS):
-                if listconf['C_SYMBOLS']:
-                    cproject.write((writeXmlSymbols(listconf['C_SYMBOLS'])))
-            if(line.strip() == WILDCARD_C_EXCLUDE):
-                if listconf['C_EXCLUDE']:
-                    cproject.write(writeXmlExcluding(listconf['C_EXCLUDE']))    
-            else:
-                cproject.write(line)
+        with open(template_path, 'r') as cproject_template, open(CPROJECT, 'w') as cproject:
+            for line in cproject_template:
+                stripped = line.strip()
+                if stripped == WILDCARD_C_INCLUDES:
+                    if listconf.get('C_INCLUDES'):
+                        cproject.write(writeXmlIncludes(listconf['C_INCLUDES']))
+                elif stripped == WILDCARD_C_SYMBOLS:
+                    if listconf.get('C_SYMBOLS'):
+                        cproject.write(writeXmlSymbols(listconf['C_SYMBOLS']))
+                elif stripped == WILDCARD_C_EXCLUDE:
+                    if listconf.get('C_EXCLUDE'):
+                        cproject.write(writeXmlExcluding(listconf['C_EXCLUDE']))
+                else:
+                    cproject.write(line)
 
     except IOError:
         print('Files .cproject or .cproject_template no accessible')
-    finally:
-        cproject_template.close()
-        cproject.close()
 
 def generate_languageSettings(compilerSettings: dict, template_path: str = None):
     if template_path is None:
@@ -102,20 +98,15 @@ def generate_languageSettings(compilerSettings: dict, template_path: str = None)
         except Exception as e:
             print(e)
 
-        langsett_template = open(template_path, 'r')
-        langsett = open(LANGUAGE_SETTINGS, 'w')
-
-        for line in langsett_template:
-            if(line.strip() == WILDCARD_LS_PROVIDER):
-                langsett.write(LANGUAGE_SETTING_PROVIDER.format(compilerSettings['CC']))
-            else:
-                langsett.write(line)
+        with open(template_path, 'r') as langsett_template, open(LANGUAGE_SETTINGS, 'w') as langsett:
+            for line in langsett_template:
+                if line.strip() == WILDCARD_LS_PROVIDER:
+                    langsett.write(LANGUAGE_SETTING_PROVIDER.format(compilerSettings['CC']))
+                else:
+                    langsett.write(line)
 
     except IOError:
         print('Files .cproject or .cproject_template no accessible')
-    finally:
-        langsett_template.close()
-        langsett.close()
 
 
 def writeXmlIncludes(incList):

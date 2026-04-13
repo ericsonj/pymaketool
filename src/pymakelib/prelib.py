@@ -609,7 +609,7 @@ def read_Makefilepy(workpath='', config_dir: Path = None):
                         targetsmk.write(f"\t{cmd} \\\n")
                     else:
                         targetsmk.write(f"\t{cmd}\n")
-            if compOpts:
+            if compOpts and isinstance(compOpts, dict):
                 compOpts['PHONY_TARGETS'] = phony_targets
     except Exception as e:
         log.exception(e)

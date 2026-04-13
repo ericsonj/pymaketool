@@ -188,7 +188,7 @@ def getTargetsScript():
 """
 
 
-class TestReadMakefilePhonyIntegration(unittest.TestCase):
+class TestReadMakefilePhonyIntegration:
 
     @pytest.fixture(autouse=True)
     def _setup(self, tmp_path, monkeypatch):
@@ -204,12 +204,12 @@ class TestReadMakefilePhonyIntegration(unittest.TestCase):
     def test_no_phony_function_writes_no_phony_block(self):
         self._write_makefile_py()
         prelib.read_Makefilepy()
-        self.assertNotIn('.PHONY:', self._targets_mk())
+        assert '.PHONY:' not in self._targets_mk()
 
     def test_empty_phony_dict_writes_no_phony_block(self):
         self._write_makefile_py('\ndef getPhonyTargets():\n    return {}\n')
         prelib.read_Makefilepy()
-        self.assertNotIn('.PHONY:', self._targets_mk())
+        assert '.PHONY:' not in self._targets_mk()
 
     def test_phony_declaration_written(self):
         self._write_makefile_py("""
@@ -219,7 +219,7 @@ def getPhonyTargets():
     }
 """)
         prelib.read_Makefilepy()
-        self.assertIn('.PHONY: flash', self._targets_mk())
+        assert '.PHONY: flash' in self._targets_mk()
 
     def test_multiple_targets_all_in_phony_declaration(self):
         self._write_makefile_py("""
@@ -232,10 +232,10 @@ def getPhonyTargets():
 """)
         prelib.read_Makefilepy()
         content = self._targets_mk()
-        self.assertIn('.PHONY:', content)
-        self.assertIn('flash', content)
-        self.assertIn('size', content)
-        self.assertIn('erase', content)
+        assert '.PHONY:' in content
+        assert 'flash' in content
+        assert 'size' in content
+        assert 'erase' in content
 
     def test_target_with_list_deps_written(self):
         self._write_makefile_py("""
@@ -245,7 +245,7 @@ def getPhonyTargets():
     }
 """)
         prelib.read_Makefilepy()
-        self.assertIn('flash: all', self._targets_mk())
+        assert 'flash: all' in self._targets_mk()
 
     def test_target_with_string_dep_written(self):
         self._write_makefile_py("""
@@ -255,7 +255,7 @@ def getPhonyTargets():
     }
 """)
         prelib.read_Makefilepy()
-        self.assertIn('size: $(TARGET)', self._targets_mk())
+        assert 'size: $(TARGET)' in self._targets_mk()
 
     def test_script_as_string_written(self):
         self._write_makefile_py("""
@@ -265,7 +265,7 @@ def getPhonyTargets():
     }
 """)
         prelib.read_Makefilepy()
-        self.assertIn('\topenocd -c "erase"', self._targets_mk())
+        assert '\topenocd -c "erase"' in self._targets_mk()
 
     def test_script_as_list_each_item_written(self):
         self._write_makefile_py("""
@@ -276,8 +276,9 @@ def getPhonyTargets():
 """)
         prelib.read_Makefilepy()
         content = self._targets_mk()
-        self.assertIn('\tpytest tests/ \\\n', content)
-        self.assertIn('\techo done\n', content)
+        assert '\tpytest tests/' in content
+        assert '\\\n' in content
+        assert '\techo done\n' in content
 
     def test_script_as_list_single_item_no_backslash(self):
         self._write_makefile_py("""
@@ -288,8 +289,8 @@ def getPhonyTargets():
 """)
         prelib.read_Makefilepy()
         content = self._targets_mk()
-        self.assertNotIn('\\\n', content)
-        self.assertIn('\topenocd\n', content)
+        assert '\\\n' not in content
+        assert '\topenocd\n' in content
 
     def test_logkey_defaults_to_uppercase_name(self):
         self._write_makefile_py("""
@@ -299,7 +300,7 @@ def getPhonyTargets():
     }
 """)
         prelib.read_Makefilepy()
-        self.assertIn('"FLASH"', self._targets_mk())
+        assert '"FLASH"' in self._targets_mk()
 
     def test_logkey_custom_value_used(self):
         self._write_makefile_py("""
@@ -309,7 +310,7 @@ def getPhonyTargets():
     }
 """)
         prelib.read_Makefilepy()
-        self.assertIn('"PROG"', self._targets_mk())
+        assert '"PROG"' in self._targets_mk()
 
     def test_phony_targets_stored_in_compiler_opts(self):
         self._write_makefile_py("""
@@ -319,13 +320,13 @@ def getPhonyTargets():
     }
 """)
         _, comp_opts, _ = prelib.read_Makefilepy()
-        self.assertIn('PHONY_TARGETS', comp_opts)
-        self.assertIn('flash', comp_opts['PHONY_TARGETS'])
+        assert 'PHONY_TARGETS' in comp_opts
+        assert 'flash' in comp_opts['PHONY_TARGETS']
 
     def test_phony_targets_not_in_compiler_opts_when_empty(self):
         self._write_makefile_py('\ndef getPhonyTargets():\n    return {}\n')
         _, comp_opts, _ = prelib.read_Makefilepy()
-        self.assertNotIn('PHONY_TARGETS', comp_opts)
+        assert 'PHONY_TARGETS' not in comp_opts
 
 
 if __name__ == '__main__':
