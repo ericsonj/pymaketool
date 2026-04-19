@@ -10,37 +10,75 @@
 **pymaketool** is an elegant and simple tool to build and manage large C/C++ projects and libraries.
 The main purpose is to simplify the build process by using Python to find and organize source files.
 
-```
-my_project/
-│
-├── Makefile                    ← root entry point (calls pymaketool)
-├── .env                        ← environment variables (optional, not committed)
-│
-├── pymake/                     ← build config folder
-│   ├── Makefile.py             ← YOU write this  (toolchain, flags, targets)
-│   ├── makefile.mk             ← generated
-│   ├── vars.mk                 ← generated
-│   ├── srcs.mk                 ← generated
-│   └── targets.mk              ← generated
-│
-├── app/                        ← source module
-│   ├── inc/
-│   │   └── main.h
-│   ├── src/
-│   │   └── main.c
-│   └── mk.py                   ← YOU write this  (recommended)
-│
-├── utils/                      ← another source module
-│   ├── utils.c
-│   ├── utils.h
-│   └── utils_mk.py             ← also supported
-│
-└── build/                      ← generated output
-    ├── app                     ← final binary
-    └── obj/
-        ├── app/src/main.o
-        └── utils/utils.o
-```
+<div style="font-family:'Consolas','Courier New',monospace;font-size:13px;background:#f3f3f3;color:#1e1e1e;border:1px solid #e0e0e0;border-radius:6px;padding:16px 20px;display:inline-block;min-width:500px;line-height:1.8">
+  <div style="margin-bottom:6px">
+    📂 <strong style="color:#0078d4">my_project/</strong>
+  </div>
+  <div style="padding-left:20px">
+    <div>📄 <span style="color:#795e26">Makefile</span> &nbsp;<span style="color:#1e1e1e;font-size:11px">← root entry point</span></div>
+    <div>📄 <span style="color:#1e1e1e">.env</span> &nbsp;<span style="color:#1e1e1e;font-size:11px">← environment variables (not committed)</span></div>
+    <br>
+    <details open>
+      <summary style="cursor:pointer;list-style:none;outline:none">
+        📂 <strong style="color:#0078d4">pymake/</strong> &nbsp;<span style="color:#1e1e1e;font-size:11px">← build config folder</span>
+      </summary>
+      <div style="padding-left:20px;margin-top:2px">
+        <div>📄 <strong style="color:#d7820a">Makefile.py</strong> &nbsp;<span style="color:#16825d;font-size:11px">✏️ YOU write this &nbsp;·&nbsp; toolchain · flags · targets</span></div>
+        <div style="color:#1e1e1e">📄 makefile.mk &nbsp;<span style="font-size:11px">← generated</span></div>
+        <div style="color:#1e1e1e">📄 vars.mk &nbsp;<span style="font-size:11px">← generated</span></div>
+        <div style="color:#1e1e1e">📄 srcs.mk &nbsp;<span style="font-size:11px">← generated</span></div>
+        <div style="color:#1e1e1e">📄 targets.mk &nbsp;<span style="font-size:11px">← generated</span></div>
+      </div>
+    </details>
+    <br>
+    <details open>
+      <summary style="cursor:pointer;list-style:none;outline:none">
+        📂 <strong style="color:#0078d4">app/</strong> &nbsp;<span style="color:#1e1e1e;font-size:11px">← source module</span>
+      </summary>
+      <div style="padding-left:20px;margin-top:2px">
+        <details>
+          <summary style="cursor:pointer;list-style:none;outline:none">📂 <span style="color:#0078d4">inc/</span></summary>
+          <div style="padding-left:20px;color:#1e1e1e">📄 main.h</div>
+        </details>
+        <details>
+          <summary style="cursor:pointer;list-style:none;outline:none">📂 <span style="color:#0078d4">src/</span></summary>
+          <div style="padding-left:20px;color:#1e1e1e">📄 main.c</div>
+        </details>
+        <div>🐍 <strong style="color:#d7820a">mk.py</strong> &nbsp;<span style="color:#16825d;font-size:11px">✏️ YOU write this &nbsp;·&nbsp; recommended</span></div>
+        <pre style="margin:4px 0;padding:10px 14px;background:#ffffff;border:1px solid #e0e0e0;border-left:3px solid #d7820a;border-radius:4px;font-size:12px;line-height:1.6;color:#1e1e1e;overflow:auto"><span style="color:#af00db">from</span> <span style="color:#001080">pm</span> <span style="color:#af00db">import</span> <span style="color:#001080">mk</span>
+
+<span style="color:#795e26">mk</span>(<span style="color:#001080">srcs</span>=[<span style="color:#a31515">"src/main.c"</span>], <span style="color:#001080">incs</span>=[<span style="color:#a31515">"inc"</span>])</pre>
+      </div>
+    </details>
+    <br>
+    <details open>
+      <summary style="cursor:pointer;list-style:none;outline:none">
+        📂 <strong style="color:#0078d4">utils/</strong> &nbsp;<span style="color:#1e1e1e;font-size:11px">← another source module</span>
+      </summary>
+      <div style="padding-left:20px;margin-top:2px">
+        <div>📄 utils.c</div>
+        <div>📄 utils.h</div>
+        <div>🐍 <strong style="color:#d7820a">utils_mk.py</strong> &nbsp;<span style="color:#16825d;font-size:11px">✏️ also supported</span></div>
+      </div>
+    </details>
+    <br>
+    <details>
+      <summary style="cursor:pointer;list-style:none;outline:none">
+        📂 <strong style="color:#0078d4">build/</strong> &nbsp;<span style="color:#1e1e1e;font-size:11px">← generated output</span>
+      </summary>
+      <div style="padding-left:20px;margin-top:2px">
+        <div>⚙️ <span style="color:#795e26">app</span> &nbsp;<span style="color:#1e1e1e;font-size:11px">← final binary</span></div>
+        <details>
+          <summary style="cursor:pointer;list-style:none;outline:none">📂 <span style="color:#0078d4">obj/</span></summary>
+          <div style="padding-left:20px;color:#1e1e1e">
+            <div>📄 app/src/main.o</div>
+            <div>📄 utils/utils.o</div>
+          </div>
+        </details>
+      </div>
+    </details>
+  </div>
+</div>
 
 ## Quick Start
 
