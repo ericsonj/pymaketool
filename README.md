@@ -35,6 +35,16 @@ from pm import mk
 
 mk(srcs=["src/main.c"], incs=["inc"])
 ```
+```python
+## Or just:
+from pm import mk
+
+mk()
+```
+```python
+## Or nothing at all:
+
+```
 
 </li>
     </ul>
