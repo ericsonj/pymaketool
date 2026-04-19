@@ -17,8 +17,8 @@ def getGCCHeaderFiles(cmd_gcc):
     return gcc_includes
 
 
-def get_gcc_arm_none_eabi(binLocation='', prefix='arm-none-eabi-', extIncludes=[]) -> dict:
-    """Get dictionary with gcc compiler set of arm-none-eabi-
+def get_gcc_arm_none_eabi(binLocation='', prefix='arm-none-eabi-', extIncludes=[]):
+    """Get a CompilerSet pre-configured for arm-none-eabi cross-compiler.
 
     Args:
         binLocation (str, optional): Location of toolchain binary. Defaults to ''.
@@ -26,9 +26,10 @@ def get_gcc_arm_none_eabi(binLocation='', prefix='arm-none-eabi-', extIncludes=[
         extIncludes (list, optional): list of external includes. Defaults to [].
 
     Returns:
-        dict: set of gcc compiler e.g. {'CC': 'arm-none-eabi-gcc' ... }
-    """    
-    return confGCC(binLocation, prefix, extIncludes)
+        CompilerSet: ready to assign to ProjectConfig.compiler_set
+    """
+    from pymakelib import CompilerSet
+    return CompilerSet(**confGCC(binLocation, prefix, extIncludes))
 
 
 def confARMeabiGCC(binLocation='', prefix='arm-none-eabi-', extIncludes=[]):
@@ -39,34 +40,36 @@ def get_c_linux(bin_location='', ext_incs=[]) -> dict:
     return get_gcc_linux(bin_location, ext_incs)
 
 
-def get_gcc_linux(bin_location='', ext_incs=[]) -> dict:
-    """Get dictionary with gcc compiler set for linux   
+def get_gcc_linux(bin_location='', ext_incs=[]):
+    """Get a CompilerSet pre-configured for host Linux GCC.
 
     Args:
         bin_location (str, optional): location of toolchain. Defaults to ''.
         ext_incs (list, optional): list of external includes. Defaults to [].
 
     Returns:
-        dict: set of gcc compiler e.g. {'CC': 'gcc' ... }
-    """    
-    return confLinuxGCC(binLocation=bin_location, extIncludes=ext_incs)
+        CompilerSet: ready to assign to ProjectConfig.compiler_set
+    """
+    from pymakelib import CompilerSet
+    return CompilerSet(**confLinuxGCC(binLocation=bin_location, extIncludes=ext_incs))
 
 
 def get_cpp_linux(bin_location='', ext_incs=[]) -> dict:
     return get_gpp_linux(bin_location, ext_incs)
 
 
-def get_gpp_linux(bin_location='', ext_incs=[]) -> dict:
-    """Get dictionary with g++ compiler set for linux   
+def get_gpp_linux(bin_location='', ext_incs=[]):
+    """Get a CompilerSet pre-configured for host Linux G++ (C++).
 
     Args:
         bin_location (str, optional): location of toolchain. Defaults to ''.
         ext_incs (list, optional): list of external includes. Defaults to [].
 
     Returns:
-        dict: set of gcc compiler e.g. {'CC': 'g++' ... }
-    """    
-    return confGCC(binLocation=bin_location, extIncludes=ext_incs, iscpp=True)
+        CompilerSet: ready to assign to ProjectConfig.compiler_set
+    """
+    from pymakelib import CompilerSet
+    return CompilerSet(**confGCC(binLocation=bin_location, extIncludes=ext_incs, iscpp=True))
 
 
 def confLinuxGCC(binLocation='', extIncludes=[]):

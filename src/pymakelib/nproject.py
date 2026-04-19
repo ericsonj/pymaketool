@@ -1,3 +1,11 @@
+import warnings
+warnings.warn(
+    "pymakelib.nproject is deprecated and will be removed in pymaketool 4.0.0. "
+    "Use copier-based templates via pynewproject instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from os import execle
 import tarfile
 import tempfile

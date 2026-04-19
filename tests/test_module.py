@@ -1,15 +1,47 @@
+import sys
 import unittest
 import pytest
 
+from pathlib import Path
 from pymakelib import module
 from pymakelib import preconts as K
+
+_PROJECT_ROOT = Path(__file__).parent.parent
+_THIS_MODULE = sys.modules[__name__]
+
+
+def _set_project_root(root: Path):
+    _THIS_MODULE._project_root = root
+
+
+def _clear_project_root():
+    if hasattr(_THIS_MODULE, '_project_root'):
+        del _THIS_MODULE._project_root
 
 
 class TestModule(unittest.TestCase):
 
+    def setUp(self):
+        _set_project_root(_PROJECT_ROOT)
+
+    def tearDown(self):
+        _clear_project_root()
+
     def test_src_type(self):
         self.assertIn('.c', module.SrcType.C)
         self.assertIn('.C', module.SrcType.CPP)
+
+    def test_src_type_c_and_asm(self):
+        self.assertIn('.c', module.SrcType.C_AND_ASM)
+        self.assertIn('.s', module.SrcType.C_AND_ASM)
+        self.assertIn('.S', module.SrcType.C_AND_ASM)
+        self.assertIn('.asm', module.SrcType.C_AND_ASM)
+        self.assertNotIn('.cpp', module.SrcType.C_AND_ASM)
+
+    def test_src_type_cpp_and_asm(self):
+        self.assertIn('.cpp', module.SrcType.CPP_AND_ASM)
+        self.assertIn('.s', module.SrcType.CPP_AND_ASM)
+        self.assertNotIn('.c', module.SrcType.CPP_AND_ASM)
 
     def test_inc_type(self):
         self.assertIn('.h', module.IncType.C)
@@ -41,6 +73,12 @@ class TestModule(unittest.TestCase):
 
 class TestAbstractModuleMeta(unittest.TestCase):
 
+    def setUp(self):
+        _set_project_root(_PROJECT_ROOT)
+
+    def tearDown(self):
+        _clear_project_root()
+
     def test_get_module_name_returns_class_name(self):
         class MyNamedMod(module.AbstractModule):
             def getSrcs(self): return []
@@ -63,6 +101,9 @@ class TestBasicCModuleFs(unittest.TestCase):
     @pytest.fixture(autouse=True)
     def _tmp_path(self, tmp_path):
         self.tmp_path = tmp_path
+        _set_project_root(tmp_path)
+        yield
+        _clear_project_root()
 
     def test_getSrcs_discovers_c_files(self):
         tmp = self.tmp_path
@@ -77,13 +118,29 @@ class TestBasicCModuleFs(unittest.TestCase):
         mod = ModTest()
         srcs = mod.getSrcs()
         self.assertEqual(2, len(srcs))
-        self.assertTrue(all(p.suffix == '.c' for p in srcs))
+        self.assertTrue(all(s.endswith('.c') for s in srcs))
 
-    def test_getIncs_discovers_h_directories(self):
+    def test_getSrcs_discovers_asm_files(self):
         tmp = self.tmp_path
-        inc_dir = tmp / "include"
-        inc_dir.mkdir()
-        (inc_dir / "header.h").write_text("")
+        (tmp / "main.c").write_text("")
+        (tmp / "startup.s").write_text("")
+        (tmp / "vectors.S").write_text("")
+
+        class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
+            def get_path(_self):
+                return str(tmp / "mod_mk.py")
+
+        mod = ModTest()
+        srcs = mod.getSrcs()
+        self.assertEqual(3, len(srcs))
+        exts = {s.rsplit('.', 1)[-1] for s in srcs}
+        self.assertIn('c', exts)
+        self.assertIn('s', exts)
+        self.assertIn('S', exts)
+
+    def test_getIncs_returns_module_path(self):
+        tmp = self.tmp_path
 
         class ModTest(module.BasicCModule):
             #pylint: disable=no-self-argument
@@ -92,7 +149,24 @@ class TestBasicCModuleFs(unittest.TestCase):
 
         mod = ModTest()
         incs = mod.getIncs()
-        self.assertIn(inc_dir, incs)
+        self.assertEqual([mod.module_path], incs)
+
+    def test_getIncs_discovers_header_dirs_by_default(self):
+        tmp = self.tmp_path
+        (tmp / "inc").mkdir()
+        (tmp / "inc" / "public.h").write_text("")
+        (tmp / "inc" / "private").mkdir()
+        (tmp / "inc" / "private" / "detail.hpp").write_text("")
+
+        class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
+            def get_path(_self):
+                return str(tmp / "mod_mk.py")
+
+        mod = ModTest()
+        incs = mod.getIncs()
+        self.assertIn(mod.module_path + "inc", incs)
+        self.assertIn(mod.module_path + "inc/private", incs)
 
     def test_findSrcs_cpp_discovers_cpp_files(self):
         tmp = self.tmp_path
@@ -122,6 +196,112 @@ class TestBasicCModuleFs(unittest.TestCase):
         mod = ModTest()
         incs = mod.findIncs(module.IncType.CPP)
         self.assertIn(inc_dir, incs)
+
+
+class TestAbstractModuleNewHelpers(unittest.TestCase):
+
+    @pytest.fixture(autouse=True)
+    def _tmp_path(self, tmp_path):
+        self.tmp_path = tmp_path
+        _set_project_root(tmp_path)
+        yield
+        _clear_project_root()
+
+    def _make_mod(self):
+        tmp = self.tmp_path
+
+        class ModTest(module.BasicCModule):
+            #pylint: disable=no-self-argument
+            def get_path(_self):
+                return str(tmp / "mod_mk.py")
+
+        return ModTest()
+
+    def test_discover_srcs_returns_strings(self):
+        (self.tmp_path / "main.c").write_text("")
+        mod = self._make_mod()
+        srcs = mod.discover_srcs()
+        self.assertTrue(all(isinstance(s, str) for s in srcs))
+
+    def test_discover_srcs_includes_c_and_asm(self):
+        (self.tmp_path / "main.c").write_text("")
+        (self.tmp_path / "isr.s").write_text("")
+        mod = self._make_mod()
+        srcs = mod.discover_srcs()
+        self.assertEqual(2, len(srcs))
+
+    def test_discover_srcs_custom_type(self):
+        (self.tmp_path / "main.c").write_text("")
+        (self.tmp_path / "lib.cpp").write_text("")
+        mod = self._make_mod()
+        srcs = mod.discover_srcs(module.SrcType.CPP)
+        self.assertEqual(1, len(srcs))
+        self.assertTrue(srcs[0].endswith('.cpp'))
+
+    def test_discover_incs_returns_list(self):
+        mod = self._make_mod()
+        incs = mod.discover_incs()
+        self.assertIsInstance(incs, list)
+
+    def test_srcs_from_prefixes_module_path(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        result = mod.srcs_from(["main.c", "util.c"])
+        self.assertEqual(["app/main.c", "app/util.c"], result)
+
+    def test_incs_from_prefixes_module_path(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        result = mod.incs_from(["include/"])
+        self.assertEqual(["app/include/"], result)
+
+    def test_incs_from_none_returns_module_path(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        result = mod.incs_from()
+        self.assertEqual(["app/"], result)
+
+    def test_incs_from_dot_returns_module_path(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        result = mod.incs_from(["."])
+        self.assertEqual(["app/"], result)
+
+    def test_incs_from_empty_returns_module_path(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        result = mod.incs_from([""])
+        self.assertEqual(["app/"], result)
+
+    def test_deprecated_getSrcsWithPath_warns(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        with self.assertWarns(DeprecationWarning):
+            result = mod.getSrcsWithPath(["main.c"])
+        self.assertEqual(["app/main.c"], result)
+
+    def test_deprecated_getIncsWithPath_warns(self):
+        mod = self._make_mod()
+        mod.module_path = "app/"
+        with self.assertWarns(DeprecationWarning):
+            result = mod.getIncsWithPath(["inc/"])
+        self.assertEqual(["app/inc/"], result)
+
+    def test_deprecated_getAllSrcsC_warns(self):
+        (self.tmp_path / "main.c").write_text("")
+        mod = self._make_mod()
+        with self.assertWarns(DeprecationWarning):
+            result = mod.getAllSrcsC()
+        self.assertEqual(1, len(result))
+
+    def test_deprecated_getAllIncsC_warns(self):
+        inc_dir = self.tmp_path / "inc"
+        inc_dir.mkdir()
+        (inc_dir / "header.h").write_text("")
+        mod = self._make_mod()
+        with self.assertWarns(DeprecationWarning):
+            result = mod.getAllIncsC()
+        self.assertIn(inc_dir, result)
 
 
 class TestCompilerOptions(unittest.TestCase):
@@ -258,9 +438,11 @@ class TestModuleHandle(unittest.TestCase):
 class TestModuleClassDecorator(unittest.TestCase):
 
     def setUp(self):
+        _set_project_root(_PROJECT_ROOT)
         module.cleanModuleInstance()
 
     def tearDown(self):
+        _clear_project_root()
         module.cleanModuleInstance()
 
     def test_decorator_appends_instance(self):
@@ -430,6 +612,12 @@ class TestModuleHandleExtra(unittest.TestCase):
 
 
 class TestAbstractModuleInit(unittest.TestCase):
+
+    def setUp(self):
+        _set_project_root(_PROJECT_ROOT)
+
+    def tearDown(self):
+        _clear_project_root()
 
     def test_init_returns_none(self):
         class ModTest(module.AbstractModule):

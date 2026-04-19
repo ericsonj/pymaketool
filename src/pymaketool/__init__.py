@@ -144,7 +144,9 @@ def main():
         print(f"Generator: {gheader} > {fileout}")
         plib.readGenHeader(gheader)
 
-    modulesPaths = sorted(Path("./").rglob("*[.|_]mk.py"))
+    modulesPaths = sorted(
+        set(Path("./").rglob("*[.|_]mk.py")) | set(Path("./").rglob("mk.py"))
+    )
     # Load modules
     for filename in modulesPaths:
         mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal, project_root=Path(".").resolve())

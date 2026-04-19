@@ -129,7 +129,9 @@ for gheader in headersPaths:
     plib.readGenHeader(gheader)
 
 
-modulesPaths = list(Path('./').rglob('*[.|_]mk.py'))
+modulesPaths = list(
+    sorted(set(Path('./').rglob('*[.|_]mk.py')) | set(Path('./').rglob('mk.py')))
+)
 # Load modules
 for filename in modulesPaths:
     mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal)

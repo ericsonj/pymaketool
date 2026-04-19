@@ -28,93 +28,126 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import signal
-import importlib
 import argparse
-import importlib.metadata
-from pymakelib import Logger
+import signal
+import sys
+
 from pymakelib.version import get_version
 
-log = Logger.getLogger()
+from .catalog import fetch_catalog
+from .commands import cmd_doctor, cmd_info, cmd_list, cmd_new, cmd_update
+from .legacy import detect_legacy, run_legacy
 
 
-def signal_handler(sig, frame):
+def _signal_handler(_sig, _frame):
     sys.exit(0)
 
 
-signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGINT, _signal_handler)
 
 
-def get_clazz(generator_path: str):
-    return generator_path.split(".")[-1]
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="pynewproject",
+        description="Scaffold and manage pymaketool C/C++ projects using copier templates.",
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"%(prog)s {get_version()}"
+    )
+
+    sub = parser.add_subparsers(dest="command", metavar="<command>")
+
+    # -- list -----------------------------------------------------------------
+    p_list = sub.add_parser("list", help="List available project templates")
+    p_list.add_argument(
+        "--category", "-c", help="Filter by category (linux, embedded, rtos)"
+    )
+    p_list.add_argument(
+        "--tag", "-t", action="append", metavar="TAG",
+        help="Filter by tag (repeatable: -t gcc -t arm)"
+    )
+    p_list.add_argument(
+        "--refresh", action="store_true", help="Force re-fetch catalog (bypass cache)"
+    )
+    p_list.add_argument(
+        "--json", action="store_true", help="Output catalog as JSON"
+    )
+
+    # -- new ------------------------------------------------------------------
+    p_new = sub.add_parser("new", help="Create a new project from a template")
+    p_new.add_argument("template", help="Template name (see 'pynewproject list')")
+    p_new.add_argument(
+        "--output", "-o", default=".", metavar="DIR",
+        help="Directory in which to create the project (default: current dir)"
+    )
+    p_new.add_argument(
+        "--ref", "-r", metavar="TAG",
+        help="Template version / git tag (default: latest)"
+    )
+    p_new.add_argument(
+        "--defaults", action="store_true",
+        help="Accept all default values without prompting"
+    )
+    p_new.add_argument(
+        "--data", "-d", action="append", default=[], metavar="KEY=VALUE",
+        help="Pass answers non-interactively (repeatable: -d author=You -d project_name=app)"
+    )
+
+    # -- update ---------------------------------------------------------------
+    p_upd = sub.add_parser("update", help="Update an existing project to latest template version")
+    p_upd.add_argument(
+        "path", nargs="?", default=".",
+        help="Project directory to update (default: current dir)"
+    )
+    p_upd.add_argument(
+        "--ref", "-r", metavar="TAG",
+        help="Target template version / git tag (default: latest)"
+    )
+    p_upd.add_argument(
+        "--conflict", choices=["inline", "rej"], default="inline",
+        help="Conflict resolution mode (default: inline)"
+    )
+
+    # -- info -----------------------------------------------------------------
+    p_info = sub.add_parser("info", help="Show details about a template")
+    p_info.add_argument("template", help="Template name")
+
+    # -- doctor ---------------------------------------------------------------
+    sub.add_parser("doctor", help="Check environment and tool availability")
+
+    return parser
 
 
-def get_module(generator_path: str):
-    return generator_path.rsplit(".", 1)[0]
+def _looks_like_legacy(argv: list[str]) -> bool:
+    """Quick pre-check: is the first arg a bare word that could be a legacy generator name?"""
+    _KNOWN = {"list", "new", "update", "info", "doctor", "-h", "--help", "-v", "--version"}
+    return bool(argv) and not argv[0].startswith("-") and argv[0] not in _KNOWN
 
 
 def main():
-    pkgs = ["pymakelib.pynewproject_cproject"]
-
-    log.debug("Search pynewproject-* packages installed")
-
-    installed_packages = importlib.metadata.distributions()
-    for dist in installed_packages:
-        if dist.metadata["Name"].startswith("pynewproject"):
-            pkgs.append(dist.metadata["Name"].replace("-", "_"))
-
-    log.debug(pkgs)
-
-    generator_objs = []
-
-    for p in pkgs:
+    # Only fetch the catalog when the first arg might be a legacy generator name.
+    # This avoids a network call (and any warning) for normal subcommand usage.
+    if len(sys.argv) > 1 and _looks_like_legacy(sys.argv[1:]):
         try:
-            mod = importlib.import_module(p)
-            generators = getattr(mod, "generators")
-            for g in generators:
-                class_name = get_clazz(g)
-                module = get_module(g)
-                genmod = importlib.import_module("{}.{}".format(p, module))
-                clazz = getattr(genmod, class_name)
-                obj = clazz()
-                generator_objs.append(obj)
-        except Exception as ex:
-            log.error(ex)
+            catalog = fetch_catalog()
+        except Exception:
+            catalog = {"templates": []}
+        if detect_legacy(sys.argv[1:], catalog):
+            run_legacy(sys.argv[1:], catalog)
+            return
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("project", help="Project key", nargs="*")
-    parser.add_argument(
-        "-l", "--list", action="store_true", help="List projects availables"
-    )
-    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {get_version()}")
+    parser = _build_parser()
     args = parser.parse_args()
 
-    def print_projects_availables():
-        print("Projects availables:")
-        for obj in generator_objs:
-            try:
-                info = obj.info()
-                generator_desc = "" if not "name" in info else info["desc"]
-                print(f"  {obj.__class__.__name__:<24}{generator_desc}")
-            except Exception as ex:
-                log.error(ex)
-
-    if args.list:
-        print_projects_availables()
-        exit(0)
-
-    if args.project:
-        for obj in generator_objs:
-            try:
-                if args.project[0] == obj.__class__.__name__:
-                    log.debug("run exec_generator")
-                    obj.exec_generator(args=sys.argv[1:])  ## TODO: Check here
-                    exit(0)
-            except Exception as ex:
-                log.error(ex)
-        print(f"Generator {args.project} not found")
-    else:
+    if args.command is None:
         parser.print_help()
-        print("\r")
-        print_projects_availables()
+        sys.exit(0)
+
+    dispatch = {
+        "list": cmd_list,
+        "new": cmd_new,
+        "update": cmd_update,
+        "info": cmd_info,
+        "doctor": cmd_doctor,
+    }
+    dispatch[args.command](args)
