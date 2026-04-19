@@ -28,6 +28,7 @@
 
 
 import os
+import warnings as _warnings
 from pymakelib.preutil import copyFile, getFileHash
 from . import AbstractMake
 from typing import List
@@ -139,11 +140,12 @@ def readGenHeader(headerpath):
     os.remove(tmp_file_name(outfile))
 
 
-def read_module(module_path: Path, compiler_opts, goals=None, project_root: Path = None) -> List[AbstractModule]:
+def read_module(module_path: Path, compiler_opts, goals=None, project_root: Path | None = None) -> List[AbstractModule]:
     lib = importlib.util.spec_from_file_location(str(module_path), str(module_path))
+    if lib is None:
+        raise ImportError(f"Could not load module from {module_path}")
     mod = importlib.util.module_from_spec(lib)
     setattr(mod, '_project_root', project_root)
-    # mod._project_root = project_root
     sys.modules[mod.__name__] = mod
     log.debug(f"exec module {mod.__name__}")
     try:
@@ -155,22 +157,49 @@ def read_module(module_path: Path, compiler_opts, goals=None, project_root: Path
     modules = []
 
     if not moduleInstances:
-        modHandle = ModuleHandle(module_path.parent, compiler_opts, goals)
-        m = POJOModule(module_path)
-        m.init_resp = wprInit(mod, modHandle)
-        m.includes = wprGetIncs(mod, modHandle)
-        m.sources = wprGetSrcs(mod, modHandle)
-        m.compiler_opts = wprGetCompilerOpts(mod, modHandle)
-        modules.append(m)
+        has_any_fn = any(hasattr(mod, fn) for fn in [
+            K.MOD_F_GETSRCS, K.MOD_F_GETINCS, K.MOD_F_INIT, K.MOD_F_GETCOMPILEROPTS
+        ])
+
+        if not has_any_fn:
+            # Empty file: behave like module() — auto-discover .c/.h in dir
+            from .module import BasicCModule, ModuleClass
+            import pymakelib.prelib as _prelib_mod
+            _prelib_mod._project_root = project_root
+            try:
+                @ModuleClass
+                class _AutoDiscover(BasicCModule):
+                    def get_path(_self):
+                        return str(module_path)
+                modules.extend(getModuleInstance())
+                cleanModuleInstance()
+            finally:
+                del _prelib_mod._project_root
+        else:
+            # Legacy free-function pattern
+            _warnings.warn(
+                f"[pymaketool] {module_path.name}: free-function module pattern "
+                "(getSrcs/getIncs at module level) is deprecated. "
+                "Use 'from pymakelib.pym import module; module()' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            modHandle = ModuleHandle(module_path.parent, compiler_opts, goals)
+            m = POJOModule(module_path)
+            m.init_resp = wprInit(mod, modHandle)
+            m.includes = wprGetIncs(mod, modHandle)
+            m.sources = wprGetSrcs(mod, modHandle)
+            m.compiler_opts = wprGetCompilerOpts(mod, modHandle)
+            modules.append(m)
+            cleanModuleInstance()
     else:
         modules.extend(getModuleInstance())
+        cleanModuleInstance()
 
-    cleanModuleInstance()
-    
     return modules
 
 
-def readModule(modPath, compilerOpts, goals=None, project_root: Path = None):
+def readModule(modPath, compilerOpts, goals=None, project_root: Path | None = None):
     lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
     mod = importlib.util.module_from_spec(lib)
     mod._project_root = project_root
@@ -185,6 +214,35 @@ def readModule(modPath, compilerOpts, goals=None, project_root: Path = None):
     modules = []
 
     if not moduleInstances:
+        has_any_fn = any(hasattr(mod, fn) for fn in [
+            K.MOD_F_GETSRCS, K.MOD_F_GETINCS, K.MOD_F_INIT, K.MOD_F_GETCOMPILEROPTS
+        ])
+
+        if not has_any_fn:
+            # Truly empty file — auto-discover .c/.h in directory
+            from .module import BasicCModule, ModuleClass
+            import pymakelib.prelib as _prelib_mod
+            _prelib_mod._project_root = project_root
+            try:
+                @ModuleClass
+                class _AutoDiscover(BasicCModule):
+                    def get_path(_self):
+                        return str(modPath)
+                instance = getModuleInstance()[0]
+                cleanModuleInstance()
+            finally:
+                del _prelib_mod._project_root
+            srcs = []
+            incs = []
+            result = wprGetSrcs(None, None, instance)
+            if result:
+                add_value2list(srcs, result)
+            result = wprGetIncs(None, None, instance)
+            if result:
+                add_value2list(incs, result)
+            modules.append(Module(srcs, incs, [], modPath))
+            return modules
+
         modHandle = ModuleHandle(modPath.parent, compilerOpts, goals)
         srcs = []
         incs = []
@@ -380,7 +438,7 @@ def resolve_config_dir(project_root: Path) -> tuple:
     )
 
 
-def read_Makefilepy(workpath='', config_dir: Path = None):
+def read_Makefilepy(workpath='', config_dir: Path | None = None):
     if config_dir is not None:
         makefilepy_path = str(config_dir / K.MAKEFILE_PY)
     else:
@@ -456,12 +514,37 @@ def read_Makefilepy(workpath='', config_dir: Path = None):
     _out_dir = config_dir if config_dir is not None else Path(workpath) if workpath else Path('.')
     makevars = open(_out_dir / K.VARS_MK, 'w')
 
+    # -----------------------------------------------------------------------
+    # Lazy imports for typed containers (avoid circular import at module load)
+    # -----------------------------------------------------------------------
+    def _to_dict_if_typed(obj):
+        """Normalize CompilerOpts/LinkerOpts/ProjectSettings/CompilerSet → dict."""
+        return obj.to_dict() if hasattr(obj, 'to_dict') else obj
+
+    def _targets_to_dict(targets):
+        """Normalize {name: Target} → {name: dict}."""
+        from pymakelib import Target as _Target
+        if isinstance(targets, dict):
+            result = {}
+            for k, v in targets.items():
+                result[k] = v.to_dict() if isinstance(v, _Target) else v
+            return result
+        return targets
+
+    # Known compiler-option dict keys — used by validation phase
+    _KNOWN_COMP_KEYS = {
+        K.MK_KEY_MACROS, K.MK_KEY_MACHINE_OPTS, K.MK_KEY_OPTIMIZE_OPTS,
+        K.MK_KEY_OPTIONS, K.MK_KEY_DEBUGGING_OPTS, K.MK_KEY_PREPROCESSOR_OPTS,
+        K.MK_KEY_WARNINGS_OPTS, K.MK_KEY_CONTROL_C_OPTS, K.MK_KEY_GENERAL_OPTS,
+        'TARGETS', 'PHONY_TARGETS', 'LIBRARIES',
+    }
+
     projSettings = None
     compSet = None
     compOpts = None
 
     try:
-        projSettings = wprGetProjectSettings()
+        projSettings = _to_dict_if_typed(wprGetProjectSettings())
         if projSettings[K.PROJSETT_PROJECTNAME]:
             makevars.write('{0:<15} = {1}\n'.format(
                 'PROJECT', projSettings[K.PROJSETT_PROJECTNAME]))
@@ -476,7 +559,7 @@ def read_Makefilepy(workpath='', config_dir: Path = None):
     makevars.write('\n')
 
     try:
-        compSet = wprGetCompilerSet()
+        compSet = _to_dict_if_typed(wprGetCompilerSet())
         for sfx in (
             K.COMPILERSET_CC,
             K.COMPILERSET_CXX,
@@ -505,7 +588,18 @@ def read_Makefilepy(workpath='', config_dir: Path = None):
     makevars.write('\n')
 
     try:
-        compOpts = wprGetCompileOpts()
+        compOpts = _to_dict_if_typed(wprGetCompileOpts())
+        # Phase 5: warn on unknown keys (only for raw-dict path; typed path already validates)
+        if isinstance(compOpts, dict):
+            for _k in compOpts:
+                if _k not in _KNOWN_COMP_KEYS:
+                    _warnings.warn(
+                        f"[pymaketool] getCompilerOpts(): unknown key '{_k}'. "
+                        f"Known keys: {sorted(_KNOWN_COMP_KEYS)}. "
+                        "Use CompilerOpts dataclass for type safety.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
         if isinstance(compOpts, dict):
             for key in compOpts:
                 makevars.write('# {0}\n'.format(key))
@@ -526,7 +620,7 @@ def read_Makefilepy(workpath='', config_dir: Path = None):
     makevars.write('\n')
 
     try:
-        linkOpts = wprGetLinkerOpts()
+        linkOpts = _to_dict_if_typed(wprGetLinkerOpts())
         if isinstance(linkOpts, dict):
             for keys in linkOpts:
                 makevars.write('# {0}\n'.format(keys))
@@ -543,7 +637,7 @@ def read_Makefilepy(workpath='', config_dir: Path = None):
     targetsmk = open(_out_dir / K.TARGETS_MK, 'w')
 
     try:
-        targets = wprGetTargetScript()
+        targets = _targets_to_dict(wprGetTargetScript())
         if isinstance(targets, dict):
             if len(targets) == 0:
                 pass

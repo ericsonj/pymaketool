@@ -56,12 +56,15 @@ endif
 """
 
 
-def get_makefile_mk_content(subdir=None):
+def get_makefile_mk_content(subdir=None, logkey_width=10):
     """Return the makefile.mk content.
 
     Args:
         subdir: subdirectory name (e.g. 'pymake') for the new layout,
                 or None for the legacy layout.
+        logkey_width: field width for the logger-compile label column (default 10).
+                      Covers common long keys: CPPCHECK (8), COMPILER (8), FORMAT (6).
+                      Increase if your logkeys are longer than 10 chars.
     """
     prefix = f"{subdir}/" if subdir else ""
     return f"""# Copyright (c) 2020, Ericson Joseph
@@ -95,11 +98,11 @@ def get_makefile_mk_content(subdir=None):
 
 ## Local functions
 define logger-compile
-\t@printf \"%6s\\t%-30s\\n\" $(1) $(2)
+\t@printf \"%{logkey_width}s\\t%-30s\\n\" $(1) $(2)
 endef
 
 define logger-compile-lib
-\t@printf \"%6s\\t%-25s %-30s\\n\" $(1) $(2) $(3)
+\t@printf \"%{logkey_width}s\\t%-25s %-30s\\n\" $(1) $(2) $(3)
 endef
 
 .DEFAULT_GOAL := all
@@ -339,122 +342,40 @@ cleanlibs:
 """
 
 FILE_MAKEFILE_PY = """import os
-from os.path import basename
-from pymakelib import git
-from pymakelib import MKVARS
-from pymakelib.Addon import Addon
-from pymakelib.eclipse_addon import EclipseAddon
+from pymakelib import ProjectConfig, Makeclass, CompilerOpts, MKVARS, Target
+from pymakelib.toolchain import get_gcc_linux
 
-Addon(EclipseAddon)
+@Makeclass
+class Build(ProjectConfig):
+    name         = os.path.basename(os.getcwd())
+    output_dir   = 'build/obj/'
+    compiler_set = get_gcc_linux()
 
-def getProjectSettings():
-    return {
-        'PROJECT_NAME': basename(os.getcwd()),
-        'FOLDER_OUT':   'Release/Objects/'
-    }
+    # Optional: load project variables from a .env file
+    # env_file = '.env'
 
+    def compiler_opts(self, opts: CompilerOpts) -> CompilerOpts:
+        opts.debugging    = ['-g3']
+        opts.standard     = ['-std=c11']
+        opts.preprocessor = ['-MP', '-MMD']
+        return opts
 
-def getTargetsScript():
-    PROJECT_NAME = basename(os.getcwd())
-    FOLDER_OUT = 'Release/'
-    TARGET = FOLDER_OUT + PROJECT_NAME
-
-    TARGETS = {
-        'TARGET': {
-            'LOGKEY':  'OUT',
-            'FILE':    TARGET,
-            'SCRIPT':  [MKVARS.LD, '-o', '$@', MKVARS.OBJECTS, MKVARS.LDFLAGS]
-        },
-        'TARGET_ZIP': {
-            'LOGKEY':   'ZIP',
-            'FILE':     TARGET + '.zip',
-            'SCRIPT':   ['zip', TARGET + '.zip', MKVARS.TARGET]
+    def targets(self):
+        FOLDER_OUT = 'build/'
+        return {
+            'TARGET': Target(
+                file   = FOLDER_OUT + self.name,
+                script = [MKVARS.LD, '-o', '$@', MKVARS.OBJECTS, MKVARS.LDFLAGS],
+                logkey = 'OUT',
+            ),
         }
-    }
 
-    return TARGETS
-
-
-def getCompilerSet():
-    return {
-        'CC':       'gcc',
-        'CXX':      'g++',
-        'LD':       'gcc',
-        'AR':       'ar',
-        'AS':       'as',
-        'OBJCOPY':  'objcopy',
-        'SIZE':     'size',
-        'OBJDUMP':  'objdump',
-        'INCLUDES': []
-    }
-
-
-LIBRARIES = []
-
-def getCompilerOpts():
-
-    PROJECT_DEF = {
-    }
-
-    return {
-        'MACROS': PROJECT_DEF,
-        'MACHINE-OPTS': [
-        ],
-        'OPTIMIZE-OPTS': [
-        ],
-        'OPTIONS': [
-        ],
-        'DEBUGGING-OPTS': [
-            '-g3'
-        ],
-        'PREPROCESSOR-OPTS': [
-            '-MP',
-            '-MMD'
-        ],
-        'WARNINGS-OPTS': [
-        ],
-        'CONTROL-C-OPTS': [
-            '-std=c89'
-        ],
-        'GENERAL-OPTS': [
-        ],
-        'LIBRARIES': LIBRARIES
-    }
-
-
-def getLinkerOpts():
-    return {
-        'LINKER-SCRIPT': [
-        ],
-        'MACHINE-OPTS': [
-        ],
-        'GENERAL-OPTS': [
-        ],
-        'LINKER-OPTS': [
-        ],
-        'LIBRARIES': LIBRARIES
-    }
-
-
-def getPhonyTargets():
-    PROJECT_NAME = basename(os.getcwd())
-    FOLDER_OUT = 'Release/'
-    TARGET = FOLDER_OUT + PROJECT_NAME
-
-    return {
-        # 'flash': {
-        #     'deps': ['all'],
-        #     'logkey': 'FLASH',
-        #     'script': 'openocd -f board/board.cfg -c "program ' + TARGET + ' verify reset exit"'
-        # },
-        # 'size': {
-        #     'deps': ['all'],
-        #     'logkey': 'SIZE',
-        #     'script': ['$(SIZE) --format=berkeley ' + TARGET]
-        # },
-        # 'erase': {
-        #     'logkey': 'ERASE',
-        #     'script': 'openocd -f board/board.cfg -c "init; halt; flash erase_sector 0 0 last; shutdown"'
-        # },
-    }
+    def getPhonyTargets(self):
+        return {
+            # 'flash': {
+            #     'deps': ['all'],
+            #     'logkey': 'FLASH',
+            #     'script': 'openocd -f board/board.cfg -c "program build/' + self.name + ' verify reset exit"'
+            # },
+        }
 """

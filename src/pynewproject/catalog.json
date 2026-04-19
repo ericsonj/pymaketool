@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "repo": "https://github.com/ericsonj/pymaketool-templates.git",
+  "templates": [
+    {
+      "name": "clinuxgcc",
+      "display_name": "C Linux GCC",
+      "description": "Basic C project for Linux with GCC toolchain",
+      "subdirectory": "templates/clinuxgcc",
+      "tags": ["linux", "gcc", "c"],
+      "category": "linux",
+      "version": "1.0.0",
+      "min_pymaketool": "3.0.0"
+    },
+    {
+      "name": "cortex_m_gcc",
+      "display_name": "ARM Cortex-M GCC",
+      "description": "Bare-metal ARM Cortex-M with arm-none-eabi-gcc",
+      "subdirectory": "templates/cortex_m_gcc",
+      "tags": ["arm", "cortex-m", "embedded", "bare-metal", "c"],
+      "category": "embedded",
+      "version": "1.0.0",
+      "min_pymaketool": "3.0.0"
+    },
+    {
+      "name": "cpp_linux_gcc",
+      "display_name": "C++ Linux GCC",
+      "description": "C++ project for Linux with GCC toolchain",
+      "subdirectory": "templates/cpp_linux_gcc",
+      "tags": ["linux", "gcc", "cpp"],
+      "category": "linux",
+      "version": "1.0.0",
+      "min_pymaketool": "3.0.0"
+    }
+  ]
+}

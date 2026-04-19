@@ -31,6 +31,7 @@ import re
 import importlib.util
 import copy
 import sys
+import warnings
 from pathlib import Path
 from typing import Final, List, Optional
 from . import preconts as K
@@ -45,6 +46,8 @@ class SrcType:
     C: Final[List[str]] = [".c"]
     CPP: Final[List[str]] = [".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx"]
     ASM: Final[List[str]] = [".s", ".S", ".asm"]
+    C_AND_ASM: Final[List[str]] = C + ASM
+    CPP_AND_ASM: Final[List[str]] = CPP + ASM
 
 
 class IncType:
@@ -280,16 +283,26 @@ class AbstractModule(ABC):
         self.module_name = self.get_module_name()
         self.path = self.get_path()
         self.dir = Path(self.path).parent
-        _src_file = Path(self.__module__).resolve()
         _mod = sys.modules.get(self.__module__)
         _proj_root = getattr(_mod, '_project_root', None) if _mod is not None else None
+        _src_file = Path(self.path).resolve()
+        if _proj_root is None:
+            # Class defined in a helper module (e.g. pym.py via module()).
+            # Fall back: find a dynamically-loaded mk.py module in sys.modules whose
+            # __file__ matches self.path.
+            _path_str = str(_src_file)
+            for _m in sys.modules.values():
+                if getattr(_m, '__file__', None) == _path_str:
+                    _proj_root = getattr(_m, '_project_root', None)
+                    if _proj_root is not None:
+                        break
         if _proj_root is not None:
             self.module_path = str(_src_file.parent.relative_to(_proj_root)) + "/"
         else:
             log.debug(
                 "project root not set; module_path not available outside read_module context"
             )
-            self.module_path = ""
+            raise Exception("project root not set; module_path not available outside read_module context")
 
     def get_module_name(self) -> str:
         """Module name
@@ -374,22 +387,6 @@ class AbstractModule(ABC):
         incs = list(dict.fromkeys(incs))
         return incs
 
-    def getAllSrcsC(self) -> List[Path]:
-        """Util method for get all sources in module, type C
-
-        Returns:
-            List[Path]: source file paths found under the module directory
-        """
-        return self.findSrcs(SrcType.C)
-
-    def getAllIncsC(self) -> List[Path]:
-        """Util method for get all includes in module, type C
-
-        Returns:
-            List[Path]: unique include directory paths found under the module directory
-        """
-        return self.findIncs(IncType.C)
-
     def getCompilerOpts(self) -> Optional[dict]:
         """Get per-module compiler options.
 
@@ -402,40 +399,123 @@ class AbstractModule(ABC):
         """
         pass
 
-    def getSrcsWithPath(self, srcs: List[str]) -> List[str]:
-        """Prefix each source path with module_path.
+    # ------------------------------------------------------------------
+    # New high-level helpers (preferred API)
+    # ------------------------------------------------------------------
 
-        Use this instead of bare filenames so the generated Makefile paths are
-        relative to the project root rather than the module directory.
+    def discover_srcs(self, src_type: Optional[List[str]] = None) -> List[str]:
+        """Auto-discover sources under the module directory, return project-relative strings.
 
         Args:
-            srcs (List[str]): source filenames relative to the module directory
-                (e.g. ``['main.c', 'util.c']``).
+            src_type: Extensions to search for. Defaults to
+                :attr:`SrcType.C_AND_ASM` (C + Assembly).
 
         Returns:
-            List[str]: paths prefixed with ``module_path``
-                (e.g. ``['app/main.c', 'app/util.c']``).
+            List[str]: project-relative source paths (e.g. ``['app/main.c', 'app/isr.s']``).
         """
-        return [self.module_path + s for s in srcs]
+        if src_type is None:
+            src_type = SrcType.C_AND_ASM
+        paths = self.findSrcs(src_type)
+        return [self.module_path + str(p.relative_to(self.dir)) for p in paths]
+
+    def discover_incs(self, discover_header_dirs: bool = False) -> List[str]:
+        """Return include roots project-relative.
+
+        Args:
+            discover_header_dirs: When ``False`` (default), return only ``[module_path]``.
+                When ``True``, scan for header files and return their parent
+                directories relative to project root.
+
+        Returns:
+            List[str]: include roots relative to project root.
+        """
+        if not self.module_path:
+            return []
+
+        if not discover_header_dirs:
+            return [self.module_path]
+
+        inc_dirs = self.findIncs(IncType.CPP)
+        if not inc_dirs:
+            return [self.module_path]
+
+        rel_dirs = []
+        for inc_dir in inc_dirs:
+            rel_to_module = str(Path(inc_dir).relative_to(self.dir))
+            if rel_to_module == ".":
+                rel_dirs.append(self.module_path)
+            else:
+                rel_dirs.append(self.module_path + rel_to_module)
+
+        return list(dict.fromkeys(rel_dirs))
+
+    def srcs_from(self, files: List[str]) -> List[str]:
+        """Prefix explicit source filenames with module_path.
+
+        Args:
+            files: Source filenames relative to the module directory.
+
+        Returns:
+            List[str]: paths prefixed with ``module_path``.
+        """
+        return [self.module_path + f for f in files]
+
+    def incs_from(self, dirs: Optional[List[str]] = None) -> List[str]:
+        """Prefix explicit include directories with module_path.
+
+        Args:
+            dirs: Include directories relative to the module directory.
+                  If ``None``, returns ``[module_path]``.
+
+        Returns:
+            List[str]: paths prefixed with ``module_path``.
+        """
+        if dirs is None:
+            return [self.module_path] if self.module_path else []
+        return [
+            self.module_path if d in (".", "") else self.module_path + d
+            for d in dirs
+        ]
+
+    # ------------------------------------------------------------------
+    # Deprecated helpers kept for backward compatibility
+    # ------------------------------------------------------------------
+
+    def getAllSrcsC(self) -> List[Path]:
+        """Deprecated: use ``findSrcs(SrcType.C)`` instead."""
+        warnings.warn(
+            "getAllSrcsC() is deprecated; use findSrcs(SrcType.C) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.findSrcs(SrcType.C)
+
+    def getAllIncsC(self) -> List[Path]:
+        """Deprecated: use ``findIncs(IncType.C)`` instead."""
+        warnings.warn(
+            "getAllIncsC() is deprecated; use findIncs(IncType.C) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.findIncs(IncType.C)
+    
+    def getSrcsWithPath(self, srcs: List[str]) -> List[str]:
+        """Deprecated: use :meth:`srcs_from` instead."""
+        warnings.warn(
+            "getSrcsWithPath() is deprecated; use srcs_from() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.srcs_from(srcs)
 
     def getIncsWithPath(self, incs: Optional[List[str]] = None) -> List[str]:
-        """Prefix each include directory with module_path.
-
-        Use this instead of bare directory names so the generated ``-I`` flags
-        are relative to the project root rather than the module directory.
-
-        Args:
-            incs (Optional[List[str]]): include directories relative to the
-                module directory.  If omitted, returns ``[module_path]`` — i.e.
-                the module directory itself becomes an include root.
-
-        Returns:
-            List[str]: paths prefixed with ``module_path``
-                (e.g. ``['app/include/']``).
-        """
-        if incs is None:
-            return [self.module_path]
-        return [self.module_path + i for i in incs]
+        """Deprecated: use :meth:`incs_from` instead."""
+        warnings.warn(
+            "getIncsWithPath() is deprecated; use incs_from() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.incs_from(incs)
 
 
 class StaticLibraryModule(metaclass=ABCMeta):
@@ -530,7 +610,7 @@ class POJOModule(AbstractModule):
 
 
 class BasicCModule(AbstractModule):
-    """Basic C module, find all sources and includes in module path
+    """Basic C module — auto-discovers C and Assembly sources; includes module directory.
 
     Args:
         path (str): path to module, _mk.py file.
@@ -539,21 +619,51 @@ class BasicCModule(AbstractModule):
     def __init__(self):
         super().__init__()
 
-    def getSrcs(self) -> list:
-        """Return list with all sources in module path
+    def getSrcs(self) -> List[str]:
+        """Return all C and Assembly sources, project-relative.
 
         Returns:
-            list: sources paths
+            List[str]: project-relative source paths.
         """
-        return self.getAllSrcsC()
+        return self.discover_srcs()
 
-    def getIncs(self) -> list:
-        """return list with all includes in module path
+    def getIncs(self) -> List[str]:
+        """Return discovered include roots, project-relative.
 
         Returns:
-            list: includes path
+            List[str]: include directories inferred from headers (fallback: ``[module_path]``).
         """
-        return self.getAllIncsC()
+        return self.discover_incs(discover_header_dirs=True)
+
+
+class BasicCppModule(AbstractModule):
+    """Basic C++ module — auto-discovers C++, C and Assembly sources; includes module directory.
+
+    Subclass this (or use @ModuleClass) for C++ source directories.
+    Override getSrcs() or getIncs() for custom file selection.
+
+    Args:
+        path (str): path to module, _mk.py or .mk.py file.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def getSrcs(self) -> List[str]:
+        """Return all C++ and Assembly sources, project-relative.
+
+        Returns:
+            List[str]: project-relative source paths.
+        """
+        return self.discover_srcs(SrcType.CPP_AND_ASM)
+
+    def getIncs(self) -> List[str]:
+        """Return module directory as include root, project-relative.
+
+        Returns:
+            List[str]: ``[module_path]``.
+        """
+        return self.discover_incs()
 
 
 class ExternalModule(AbstractModule):
@@ -573,7 +683,8 @@ class ExternalModule(AbstractModule):
         super().__init__()
         try:
             modPath = self.getModulePath()
-            if not modPath.endswith("_mk.py"):
+            _name = Path(modPath).name
+            if not (_name == "mk.py" or _name.endswith("_mk.py") or _name.endswith(".mk.py")):
                 raise AttributeError(f"{modPath} is not a valid module path")
             lib = importlib.util.spec_from_file_location(str(modPath), str(modPath))
             mod = importlib.util.module_from_spec(lib)
