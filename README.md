@@ -28,12 +28,12 @@ my_project/
 │   │   └── main.h
 │   ├── src/
 │   │   └── main.c
-│   └── app_mk.py               ← YOU write this  (can be empty!)
+│   └── mk.py                   ← YOU write this  (recommended)
 │
 ├── utils/                      ← another source module
 │   ├── utils.c
 │   ├── utils.h
-│   └── utils_mk.py             ← YOU write this  (module())
+│   └── utils_mk.py             ← also supported
 │
 └── build/                      ← generated output
     ├── app                     ← final binary
@@ -104,88 +104,60 @@ ubuntu@$ pynewproject CLinuxGCC
 
 ---
 
-## Module Files (`*_mk.py` / `*.mk.py`)
+## Module Files (`mk.py`, `*_mk.py`, `*.mk.py`)
 
-**pymaketool** discovers all `*_mk.py` and `*.mk.py` files recursively in your project. Each file describes one source module (a directory of C/C++ files).
+**pymaketool** discovers module files recursively. The shortest and recommended name is `mk.py`, but `app_mk.py` and `app.mk.py` still work.
 
-### Zero lines — empty file (simplest)
+Each module file describes one folder of C/C++ code.
 
-Leave the file completely empty. pymaketool auto-discovers all `.c` and `.h` files in the same directory:
-
-```python
-# app/app_mk.py  ← file can be completely empty
-```
-
-### One line — `module()`
+### Recommended DX: `from pm import mk`
 
 ```python
-# app/app_mk.py
-from pymakelib.pym import module
-module()
+# app/mk.py
+from pm import mk
+
+mk()
 ```
 
-With explicit file lists:
+That is enough for most modules. `mk()` captures the current file path and auto-discovers sources and includes in the same directory.
+If you want zero lines, an empty `mk.py` also works.
+
+### Common cases
+
+Explicit files:
 
 ```python
-from pymakelib.pym import module
-module(srcs=['src/main.c', 'src/util.c'], incs=['inc/'])
+from pm import mk
+
+mk(srcs=["src/main.c", "src/util.c"], incs=["inc"])
 ```
 
-### Class-based — full control
-
-Use this when you need custom discovery logic, per-module compiler flags, or static libraries:
+Exclude files from auto-discovery:
 
 ```python
-# app/app_mk.py
-from pymakelib import module
+from pm import mk, skip
 
-@module.ModuleClass
-class App(module.BasicCModule):
-    pass  # auto-discovers .c/.h in the module directory
+mk(srcs=skip("test*", "mock_*"), incs=[".", "include"])
 ```
 
-Override methods for custom behaviour:
+C++ module:
 
 ```python
-@module.ModuleClass
-class App(module.BasicCModule):
+from pm import mk
 
-    def getSrcs(self) -> list:
-        return self.getSrcsWithPath(['main.c', 'util.c'])
-
-    def getIncs(self) -> list:
-        return self.getIncsWithPath(['inc/'])
-
-    def getCompilerOpts(self):
-        from pymakelib import CompilerOpts
-        opts = CompilerOpts()
-        opts.warnings = ['-Wall', '-Werror']
-        return opts.to_dict()
+mk(lang="cpp")
 ```
 
-For C++ modules use `BasicCppModule` (auto-discovers `.cpp`/`.cc`/`.C` and `.h`/`.hpp`):
+### When to use the class API
+
+Use the class-based API only when you need custom module behavior, static libraries, or full control over discovery.
 
 ```python
 from pymakelib import module
 
 @module.ModuleClass
-class Core(module.BasicCppModule):
+class App(module.BasicCModule):
     pass
-```
-
-### Static library module
-
-```python
-from pymakelib import module
-
-@module.ModuleClass
-class ExtLib(module.ExternalModule):
-
-    def init(self):
-        return module.StaticLibrary("modulelib", "Release", rebuild=True)
-
-    def getModulePath(self) -> str:
-        return '/LIBS/module_lib/module_lib_mk.py'
 ```
 
 ---
