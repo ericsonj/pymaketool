@@ -310,6 +310,22 @@ class AbstractMake(ABC):
 
     def getPhonyTargets(self) -> dict[str, PhonyTarget]:
         return {}
+    
+    def getIgnoreConfig(self) -> dict:
+        """Return ignore configuration for module discovery.
+        
+        Override to customize ignore behavior. Returns dict with keys:
+        - 'use_gitignore': bool (default True) - whether to read .gitignore
+        - 'ignore_list': List[str] (default []) - additional patterns to ignore
+        
+        Example:
+            def getIgnoreConfig(self):
+                return {
+                    'use_gitignore': True,
+                    'ignore_list': ['tests/', 'vendor/']
+                }
+        """
+        return {}
 
 
 class ProjectConfig(AbstractMake):
@@ -348,12 +364,16 @@ class ProjectConfig(AbstractMake):
         compiler_set: toolchain — set to get_gcc_linux() etc. (REQUIRED)
         addons:       list of addon classes, e.g. [EclipseAddon, VSCodeAddon]
         env_file:     optional path to a .env file loaded before build config
+        use_gitignore: whether to read .gitignore for module discovery (default True)
+        ignore_list:  additional patterns to ignore during module discovery (default [])
     """
-    name:         str              = ''
-    output_dir:   str              = 'build/obj/'
-    compiler_set: Optional[object] = None
-    addons:       List[type]       = field(default_factory=list) if False else []
-    env_file:     Optional[str]    = None
+    name:          str              = ''
+    output_dir:    str              = 'build/obj/'
+    compiler_set:  Optional[object] = None
+    addons:        List[type]       = field(default_factory=list) if False else []
+    env_file:      Optional[str]    = None
+    use_gitignore: bool             = True
+    ignore_list:   List[str]        = field(default_factory=list) if False else []
 
     def getProjectSettings(self, **kwargs) -> dict:
         n = self.name or os.path.basename(os.getcwd())
@@ -395,6 +415,13 @@ class ProjectConfig(AbstractMake):
             if isinstance(first_val, Target):
                 return {name: t.to_dict() for name, t in result.items()}
         return result
+    
+    def getIgnoreConfig(self) -> dict:
+        """Return ignore configuration from attributes or override method."""
+        return {
+            'use_gitignore': self.use_gitignore,
+            'ignore_list': self.ignore_list,
+        }
 
 
 def Makeclass(clazz):

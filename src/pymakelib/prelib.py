@@ -407,6 +407,11 @@ def read_Makefilepy_obj(workpath='') -> AbstractMake:
                 return getattr(mod, K.MK_F_GETCOMPILEROPTS)()
             def getLinkerOpts(self, **kwargs) -> dict:
                 return getattr(mod, K.MK_F_GETLINKEROPTS)()
+            def getTargetsScript(self, **kwargs) -> dict:
+                return getattr(mod, K.MK_F_GETTARGETSSCRIPT)()
+            def getPhonyTargets(self) -> dict:
+                fn = getattr(mod, K.MK_F_GETPHONYTARGETS, None)
+                return fn() if fn else {}
         projectInstance = bproject()
     return projectInstance
 

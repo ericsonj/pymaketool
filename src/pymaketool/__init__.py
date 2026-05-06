@@ -135,28 +135,62 @@ def main():
 
     project.setSettings(globalSettings)
 
-    ignoreModuleList = moduleignore.readIgnoreFile()
+    # Get ignore configuration from Makefile.py if available
+    projectInstance = plib.getProjectInstance()
+    ignore_config = {}
+    if projectInstance and hasattr(projectInstance, 'getIgnoreConfig'):
+        ignore_config = projectInstance.getIgnoreConfig()
+    
+    # Read and compile ignore patterns with gitignore-style semantics
+    ignore_spec = moduleignore.read_ignore_spec(
+        project_root=project_root,
+        config_dir=config_dir,
+        makefile_config=ignore_config
+    )
 
     # Execute GenHeaders
-    headersPaths = list(Path("./").rglob("*[.|_]h.py"))
+    # Use os.walk(followlinks=True) so that symlinked directories (e.g.
+    # TARGET/ and wrapper/ in the pytest-qemu-pic32mk workspace) are scanned.
+    def _rglob_follow(pattern: str):
+        import fnmatch
+        results = []
+        for root, dirs, files in os.walk(".", followlinks=True):
+            for fname in files:
+                if fnmatch.fnmatch(fname, pattern):
+                    results.append(Path(root) / fname)
+        return results
+
+    headersPaths = _rglob_follow("*[.|_]h.py")
     for gheader in headersPaths:
         fileout = re.sub("[.|_]h.py", ".h", str(gheader))
         print(f"Generator: {gheader} > {fileout}")
         plib.readGenHeader(gheader)
 
     modulesPaths = sorted(
-        set(Path("./").rglob("*[.|_]mk.py")) | set(Path("./").rglob("mk.py"))
+        set(_rglob_follow("*[.|_]mk.py")) | set(_rglob_follow("mk.py"))
     )
+    
+    # Filter out ignored modules before loading (more efficient)
+    if ignore_spec:
+        filtered_paths = []
+        for module_path in modulesPaths:
+            # Normalize to project-relative POSIX path for matching
+            try:
+                rel_path = module_path.relative_to(project_root)
+                posix_path = str(rel_path).replace('\\', '/')
+            except ValueError:
+                # Path outside project root, use as-is
+                posix_path = str(module_path).replace('\\', '/')
+            
+            if not ignore_spec.match_file(posix_path):
+                filtered_paths.append(module_path)
+        
+        modulesPaths = filtered_paths
+    
     # Load modules
     for filename in modulesPaths:
         mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal, project_root=Path(".").resolve())
         modules.extend(mod)
-
-    for ex in ignoreModuleList:
-        for i, o in enumerate(modules):
-            if o.filename == ex:
-                del modules[i]
-                break
 
     # Write CSRC
     srcsfile = open(config_dir / K.SRCS_MK, "w")

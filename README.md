@@ -184,6 +184,88 @@ class App(module.BasicCModule):
 
 ---
 
+## Ignoring Modules During Discovery
+
+**pymaketool** automatically reads `.gitignore` by default and applies gitignore-style pattern matching to skip module files during discovery. You can also use `.moduleignore` for pymaketool-specific ignore patterns.
+
+### Quick start
+
+Create a `.moduleignore` file in `pymake/` (or project root as fallback):
+
+```gitignore
+# Ignore test modules
+tests/
+*_test_mk.py
+
+# Ignore vendor code
+vendor/
+third_party/
+
+# Ignore specific modules
+experimental/prototype_mk.py
+```
+
+### Pattern syntax
+
+`.moduleignore` and `.gitignore` use **gitignore-style patterns**:
+
+| Pattern | Matches |
+|---------|---------|
+| `test_*.py` | Any file starting with `test_` |
+| `build/` | Entire `build/` directory and its contents |
+| `**/temp_*` | `temp_*` files at any depth |
+| `*.tmp` | Any file ending with `.tmp` |
+| `!important_mk.py` | Negation: exclude `important_mk.py` from ignore |
+
+Comments (`#`) and blank lines are ignored.
+
+### Source precedence
+
+Ignore patterns are merged from multiple sources in this order:
+
+1. **`.gitignore`** (project root) — read by default
+2. **`.moduleignore`** (`pymake/.moduleignore` preferred, fallback to root `.moduleignore`)
+3. **`Makefile.py`** — additional patterns via `ignore_list`
+
+Later sources can override earlier ones using negation (`!pattern`).
+
+### Control via Makefile.py
+
+Disable `.gitignore` or add extra patterns:
+
+```python
+from pymakelib import ProjectConfig, Makeclass
+
+@Makeclass
+class Build(ProjectConfig):
+    use_gitignore = False               # disable .gitignore reading
+    ignore_list   = ['vendor/', 'tmp/'] # additional patterns
+    ...
+```
+
+Or override the `getIgnoreConfig()` method for dynamic control:
+
+```python
+@Makeclass
+class Build(ProjectConfig):
+    ...
+    
+    def getIgnoreConfig(self):
+        return {
+            'use_gitignore': True,
+            'ignore_list': ['tests/', 'experimental/']
+        }
+```
+
+### File location
+
+- **Preferred**: `pymake/.moduleignore` (alongside `Makefile.py`)
+- **Fallback**: `.moduleignore` in project root (for legacy projects)
+
+**Why `.gitignore` by default?** Most projects already ignore build artifacts, vendor code, and tests in `.gitignore`. Reading it by default reduces duplication and follows the principle of least surprise.
+
+---
+
 ## Project Configuration (`Makefile.py`)
 
 `Makefile.py` is the project entry point. It defines the toolchain, compiler flags, and build targets.
