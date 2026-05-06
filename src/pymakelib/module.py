@@ -285,7 +285,11 @@ class AbstractModule(ABC):
         self.dir = Path(self.path).parent
         _mod = sys.modules.get(self.__module__)
         _proj_root = getattr(_mod, '_project_root', None) if _mod is not None else None
-        _src_file = Path(self.path).resolve()
+        # Use the logical (non-symlink-resolved) path so that modules inside
+        # symlinked directories (e.g. TARGET/ → foreign project sources) remain
+        # relative to the workspace root instead of their real filesystem location.
+        _src_file_logical = Path(self.path).absolute()
+        _src_file = _src_file_logical
         if _proj_root is None:
             # Class defined in a helper module (e.g. pym.py via module()).
             # Fall back: find a dynamically-loaded mk.py module in sys.modules whose

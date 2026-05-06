@@ -104,10 +104,17 @@ if not goal:
 
 modules = []
 modulesPaths = []
-ignoreModuleList = []
 
 # Add project path to sys.path for users scripts
 sys.path.append(str(os.getcwd()))
+
+# Detect project root and config directory (for pymake/ layout)
+project_root = Path('.').resolve()
+try:
+    config_dir, layout_mode = plib.resolve_config_dir(project_root)
+except FileNotFoundError:
+    print("Not a pymaketool project")
+    sys.exit()
 
 projSettings, compilerOpts, compilerSettings = plib.read_Makefilepy()
 
@@ -119,7 +126,18 @@ globalSettings = {
 
 project.setSettings(globalSettings)
 
-ignoreModuleList = moduleignore.readIgnoreFile()
+# Get ignore configuration from Makefile.py if available
+projectInstance = plib.getProjectInstance()
+ignore_config = {}
+if projectInstance and hasattr(projectInstance, 'getIgnoreConfig'):
+    ignore_config = projectInstance.getIgnoreConfig()
+
+# Read and compile ignore patterns with gitignore-style semantics
+ignore_spec = moduleignore.read_ignore_spec(
+    project_root=project_root,
+    config_dir=config_dir,
+    makefile_config=ignore_config
+)
 
 #Execute GenHeaders
 headersPaths = list(Path('./').rglob('*[.|_]h.py'))
@@ -132,16 +150,28 @@ for gheader in headersPaths:
 modulesPaths = list(
     sorted(set(Path('./').rglob('*[.|_]mk.py')) | set(Path('./').rglob('mk.py')))
 )
+
+# Filter out ignored modules before loading (more efficient)
+if ignore_spec:
+    filtered_paths = []
+    for module_path in modulesPaths:
+        # Normalize to project-relative POSIX path for matching
+        try:
+            rel_path = module_path.relative_to(project_root)
+            posix_path = str(rel_path).replace('\\', '/')
+        except ValueError:
+            # Path outside project root, use as-is
+            posix_path = str(module_path).replace('\\', '/')
+        
+        if not ignore_spec.match_file(posix_path):
+            filtered_paths.append(module_path)
+    
+    modulesPaths = filtered_paths
+
 # Load modules
 for filename in modulesPaths:
     mod = plib.readModule(filename, copy.deepcopy(compilerOpts), goal)
     modules.extend(mod)
-
-for ex in ignoreModuleList:
-    for i, o in enumerate(modules):
-        if o.filename == ex:
-            del modules[i]
-            break
 
 # Write CSRC
 srcsfile = open('srcs.mk', 'w')
