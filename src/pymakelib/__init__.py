@@ -86,6 +86,26 @@ class CompilerOpts:
             K.MK_KEY_GENERAL_OPTS:      self.general,
         }
 
+    def define_flag(self, name: str) -> 'CompilerOpts':
+        """Bare define — expands to -DNAME with no value."""
+        self.macros[name] = None
+        return self
+
+    def define_string(self, name: str, value: str) -> 'CompilerOpts':
+        """Quoted string define — expands to -DNAME=\"value\"."""
+        self.macros[name] = value
+        return self
+
+    def define_raw(self, name: str, value: str) -> 'CompilerOpts':
+        """Raw (unquoted) define — expands to -DNAME=value. Use for filenames or C expressions."""
+        self.macros[name] = Define(value)
+        return self
+
+    def define_int(self, name: str, value: int) -> 'CompilerOpts':
+        """Integer define — expands to -DNAME=42."""
+        self.macros[name] = value
+        return self
+
 
 @dataclass
 class LinkerOpts:

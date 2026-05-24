@@ -362,6 +362,11 @@ class TestGCCCompilerOpts(unittest.TestCase):
         gcc.addMacroOpts('LEVEL', '3')
         self.assertFalse(gcc.isMacroValue('LEVEL', '99'))
 
+    def test_addMacroOpts_value_with_spaces(self):
+        gcc = self._make_gcc()
+        gcc.addMacroOpts('LABEL', 'hello world')
+        self.assertEqual('hello world', gcc.getMacroValue('LABEL'))
+
     def test_isMacroValue_undefined_macro(self):
         gcc = self._make_gcc()
         self.assertFalse(gcc.isMacroValue('MISSING', 'x'))

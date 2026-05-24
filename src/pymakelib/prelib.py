@@ -28,6 +28,7 @@
 
 
 import os
+import re
 import warnings as _warnings
 from pymakelib.preutil import copyFile, getFileHash
 from . import AbstractMake
@@ -347,23 +348,48 @@ def list2str(l):
     return ' '.join(l)
 
 
+_VALID_C_IDENT = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
+_ALLOWED_MACRO_TYPES = (type(None), str, bool, int, D)
+
+def _validate_macros(macros: dict) -> None:
+    for key, value in macros.items():
+        if not _VALID_C_IDENT.match(key):
+            raise ValueError(
+                f"Invalid macro key {key!r}: must be a valid C identifier "
+                f"(letters, digits, underscores; cannot start with a digit)."
+            )
+        if not isinstance(value, _ALLOWED_MACRO_TYPES):
+            raise TypeError(
+                f"Macro {key!r} has unsupported value type {type(value).__name__!r}. "
+                f"Allowed: None (flag), str, bool, int, Define."
+            )
+
 def macrosDictToString(macros):
+    if not isinstance(macros, dict):
+        return ''
+    _validate_macros(macros)
     mstr = []
-    if isinstance(macros, dict):
-        for key in macros:
-            if macros[key] != None and macros[key] != '':
-                if isinstance(macros[key], str):
-                    mstr.append('-D{}=\\\"{}\\\"'.format(key, macros[key]))
-                elif isinstance(macros[key], bool):
-                    mstr.append(
-                        '-D{}={}'.format(key, '1' if macros[key] else '0'))
-                elif isinstance(macros[key], D):
-                    mstr.append(
-                        '-D{}={}'.format(key, macros[key].getDefine()))
+    for key in macros:
+        if macros[key] != None and macros[key] != '':
+            if isinstance(macros[key], str):
+                val = macros[key]
+                quoted = '\\\"{}\\\"'.format(val)
+                if ' ' in val:
+                    quoted = "'\\\"{}\\\"'".format(val)
+                mstr.append('-D{}={}'.format(key, quoted))
+            elif isinstance(macros[key], bool):
+                mstr.append(
+                    '-D{}={}'.format(key, '1' if macros[key] else '0'))
+            elif isinstance(macros[key], D):
+                define_val = macros[key].getDefine()
+                if ' ' in define_val:
+                    mstr.append("-D{}='{}'".format(key, define_val))
                 else:
-                    mstr.append('-D{}={}'.format(key, macros[key]))
+                    mstr.append('-D{}={}'.format(key, define_val))
             else:
-                mstr.append('-D{}'.format(key))
+                mstr.append('-D{}={}'.format(key, macros[key]))
+        else:
+            mstr.append('-D{}'.format(key))
 
     return ' '.join(mstr)
 
