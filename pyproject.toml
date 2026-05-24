@@ -5,7 +5,7 @@ description = ""
 authors = [{ name = "Ericson Joseph", email = "ericsonjoseph@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["setuptools (>=80.10.2,<81.0.0)", "prompt-toolkit (>=3.0.52,<4.0.0)", "tomli (>=2.4.0,<3.0.0)", "copier (>=9.0.0,<10.0.0)", "jinja2-time (>=0.2.0,<0.3.0)"]
+dependencies = ["setuptools (>=80.10.2,<81.0.0)", "prompt-toolkit (>=3.0.52,<4.0.0)", "tomli (>=2.4.0,<3.0.0)", "copier (>=9.0.0,<10.0.0)", "jinja2-time (>=0.2.0,<0.3.0)", "rich (>=13.0.0,<14.0.0)"]
 
 [tool.poetry]
 packages = [

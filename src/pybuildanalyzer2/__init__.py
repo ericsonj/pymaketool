@@ -43,12 +43,14 @@ import subprocess
 import argparse
 from pathlib import Path
 import json
-from typing import Text
 import http.server
 import socketserver
 import threading
 import webbrowser
 from urllib.parse import parse_qs, urlparse
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 # ---------------------
 
@@ -242,72 +244,50 @@ class WebRegionsServer:
 
 class MemRegionView:
 
-    PRINT_FORMAT = '| {0:<15}| {1:<15}| {2:<15}| {3:>12}| {4:>12}| {5:>12} {6:<11} {7:>7} |'
-
     def __init__(self, regions):
         self.regions = regions
 
-    def __printBar(self, total, using, length=10, usingColor=False):
-        str = []
-        if total == 0:
-            total = 1
-            using = 0
-        str.append('|')
-        rate = using/total
-        color = '\033[91m'
+    def _usage_color(self, rate):
         if rate < 0.60:
-            color = '\033[92m'
-        elif rate < 0.90:
-            color = '\033[93m'
-        if usingColor:
-            str.append(color)
-        unit = total/length
-        uunit = unit/8
-        a = int(using/uunit)
-        b = int(a/8)
-        c = a - b*8
-        str.append(chr(9608)*b)
-        if c > 0: 
-            str.append(chr(9615 - (1*c)))
-        s = b + (1 if c > 0 else 0)
-        str.append(' '*(length-s))
-        if usingColor:
-            str.append('\033[0m')
+            return "green"
+        if rate < 0.90:
+            return "yellow"
+        return "red"
 
-        str.append('|')
-        return ''.join(str)
-
-    def __printRegion(self, region):
-        if (region.length == 0):
-            return self.PRINT_FORMAT.format(
-                        region.name,
-                        hex(region.origin),
-                        hex(region.end),
-                        '0.0K',
-                        '0.0K',
-                        '0.0K',
-                        self.__printBar(10, 0, usingColor=False),
-                        '{:.2f}%'.format(0.0)
-            )
-        name = region.name
-        origin = hex(region.origin)
-        end = hex(region.end)
-        length = toKB(region.length)
-        free = toKB(region.length - region.using)
-        using = toKB(region.using)
-        bar = self.__printBar(region.length, region.using, usingColor=False)
-        perc = '{:.2f}%'.format((region.using/region.length)*100)
-        print(self.PRINT_FORMAT.format(name, origin, end, length, free, using, bar, perc))
-
-
-    def __printHeader(self):
-        print(self.PRINT_FORMAT.format('Region', 'Start', 'End', 'Size', 'Free', 'Used', '', 'Usage(%)'))
-
+    def _bar(self, rate, width=12):
+        filled = int(rate * width)
+        color = self._usage_color(rate)
+        bar = Text()
+        bar.append("█" * filled, style=color)
+        bar.append("░" * (width - filled), style="dim")
+        return bar
 
     def printAll(self):
-        self.__printHeader()
+        console = Console()
+        table = Table(title="Memory Regions", show_lines=False, box=None, header_style="bold cyan")
+        table.add_column("Region", style="bold")
+        table.add_column("Start")
+        table.add_column("End")
+        table.add_column("Size", justify="right")
+        table.add_column("Free", justify="right")
+        table.add_column("Used", justify="right")
+        table.add_column("Bar")
+        table.add_column("Usage%", justify="right")
+
         for r in self.regions:
-            self.__printRegion(r)
+            rate = (r.using / r.length) if r.length > 0 else 0.0
+            color = self._usage_color(rate)
+            table.add_row(
+                r.name,
+                hex(r.origin),
+                hex(r.end),
+                toKB(r.length),
+                toKB(r.length - r.using),
+                Text(toKB(r.using), style=color),
+                self._bar(rate),
+                Text(f"{rate * 100:.1f}%", style=color),
+            )
+        console.print(table)
 
 
 def parse_mips32_map_file(mapfile_path, sections):
