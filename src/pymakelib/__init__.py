@@ -31,6 +31,7 @@ import inspect
 from abc import ABC,abstractmethod
 import logging
 from logging import Logger as SysLogger, PlaceHolder
+from pathlib import Path
 from typing import Dict, List, Optional, TypedDict, Union
 from dataclasses import dataclass, field
 
@@ -333,11 +334,11 @@ class AbstractMake(ABC):
     
     def getIgnoreConfig(self) -> dict:
         """Return ignore configuration for module discovery.
-        
+
         Override to customize ignore behavior. Returns dict with keys:
         - 'use_gitignore': bool (default True) - whether to read .gitignore
         - 'ignore_list': List[str] (default []) - additional patterns to ignore
-        
+
         Example:
             def getIgnoreConfig(self):
                 return {
@@ -346,6 +347,36 @@ class AbstractMake(ABC):
                 }
         """
         return {}
+
+    def sort_sources(self, paths: List[Path]) -> List[Path]:
+        """Control source file order written to srcs.mk.
+
+        Override to apply a custom sort — useful when link order matters
+        (e.g. MPLAB IDE projects). Receives all source paths for one module,
+        returns them in the desired order.
+
+        Default: alphabetical by string representation.
+
+        Example:
+            def sort_sources(self, paths):
+                return mplab_walk(paths, excluded=set())
+        """
+        return sorted(paths, key=str)
+
+    def sort_modules(self, paths: List[Path]) -> List[Path]:
+        """Control the discovery order of module files (*_mk.py) before loading.
+
+        Override to apply a custom module file order — useful when the block
+        order in srcs.mk must match a specific link sequence. Receives the list
+        of discovered *_mk.py Path objects, returns them in the desired order.
+
+        Default: alphabetical (same as the built-in sorted() behaviour).
+
+        Example:
+            def sort_modules(self, paths):
+                return sorted(paths, key=lambda p: p.parts[::-1])
+        """
+        return sorted(paths)
 
 
 class ProjectConfig(AbstractMake):
@@ -447,7 +478,7 @@ class ProjectConfig(AbstractMake):
 def Makeclass(clazz):
     obj = clazz()
     if not isinstance(obj, AbstractMake):
-        __log.warning(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.AbstractMake")
+        __log.debug(f"class \'{clazz.__name__}\' in Makefile.py not inheritance of pymakelib.AbstractMake")
     # Auto-load .env if declared
     env_file = getattr(obj, 'env_file', None)
     if env_file:
@@ -480,7 +511,6 @@ def getProjectInstance() -> AbstractMake:
 
 ## More OOP for pymaketool
 
-from pathlib import Path
 import copy
 from . import prelib as plib
 from . import module

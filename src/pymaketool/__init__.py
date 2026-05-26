@@ -43,6 +43,7 @@ from pymakelib import make_files
 from pymakelib import addon
 from pymakelib import Logger
 from pymakelib import project
+from pymakelib import getProjectInstance
 from pymakelib.version import get_version
 
 log = Logger.getLogger()
@@ -166,9 +167,15 @@ def main():
         print(f"Generator: {gheader} > {fileout}")
         plib.readGenHeader(gheader)
 
-    modulesPaths = sorted(
-        set(_rglob_follow("*[.|_]mk.py")) | set(_rglob_follow("mk.py"))
-    )
+    _make_inst_early = getProjectInstance()
+    _raw_paths: list[Path] = list(set(_rglob_follow("*[.|_]mk.py")) | set(_rglob_follow("mk.py")))
+    _sort_modules_fn = getattr(_make_inst_early, 'sort_modules', None) if _make_inst_early else None
+    if callable(_sort_modules_fn):
+        from typing import cast, Callable
+        _typed_sort = cast(Callable[[list[Path]], list[Path]], _sort_modules_fn)
+        modulesPaths: list[Path] = _typed_sort(_raw_paths)
+    else:
+        modulesPaths = sorted(_raw_paths)
     
     # Filter out ignored modules before loading (more efficient)
     if ignore_spec:
@@ -205,6 +212,8 @@ def main():
 
     log.debug("**load modules**")
     all_srcs = []
+    _make_inst = getProjectInstance()
+    _sort_fn = getattr(_make_inst, 'sort_sources', None) if _make_inst else None
     modules = sorted(modules, key=lambda mod: mod.orden)
     for mod in modules:
         if mod.isEmpty():
@@ -238,7 +247,9 @@ def main():
         if mod.staticLib:
             prefixSrcs = mod.staticLib.name.upper() + "_"
 
-        for src in sorted(mod.srcs, key=str):
+        _src_paths = [Path(s) for s in mod.srcs]
+        _sorted_srcs = _sort_fn(_src_paths) if callable(_sort_fn) else sorted(_src_paths, key=str)
+        for src in _sorted_srcs:
             if str(src).endswith(".c"):
                 srcsfile.write("{}CSRC += {}\n".format(prefixSrcs, src))
             elif str(src).endswith(".cpp"):
