@@ -11,7 +11,7 @@ class TestMacrosDictToString(unittest.TestCase):
 
     def test_string_value_with_spaces(self):
         result = macrosDictToString({'APP_NAME': 'My App'})
-        self.assertEqual(result, "-DAPP_NAME='\\\"My App\\\"'")
+        self.assertEqual(result, "-DAPP_NAME='\"My App\"'")
 
     def test_bare_define_none(self):
         result = macrosDictToString({'DEBUG': None})
@@ -43,7 +43,7 @@ class TestMacrosDictToString(unittest.TestCase):
 
     def test_multiple_macros_space_and_bare(self):
         result = macrosDictToString({'A': 'hello world', 'B': None})
-        self.assertIn("-DA='\\\"hello world\\\"'", result)
+        self.assertIn("-DA='\"hello world\"'", result)
         self.assertIn('-DB', result)
 
     def test_empty_dict(self):

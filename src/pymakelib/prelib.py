@@ -375,7 +375,7 @@ def macrosDictToString(macros):
                 val = macros[key]
                 quoted = '\\\"{}\\\"'.format(val)
                 if ' ' in val:
-                    quoted = "'\\\"{}\\\"'".format(val)
+                    quoted = "'\"{}\"'".format(val)
                 mstr.append('-D{}={}'.format(key, quoted))
             elif isinstance(macros[key], bool):
                 mstr.append(
