@@ -115,10 +115,16 @@ def mk(
     caller_file = sys._getframe(1).f_code.co_filename
     module_dir = Path(caller_file).parent
 
+    # Capture skip/exclude patterns before _resolve_* collapses the dict to a
+    # filtered list — they are retained for emission into srcs.mk.
+    srcs_excl = srcs.get("exclude", []) if isinstance(srcs, dict) else []
+    incs_excl = incs.get("exclude", []) if isinstance(incs, dict) else []
+
     srcs = _resolve_srcs(srcs, module_dir, lang.lower())
     incs = _resolve_incs(incs, module_dir, lang.lower())
 
-    _register_module(caller_file, srcs, incs, compiler_opts, base_class=base_class)
+    _register_module(caller_file, srcs, incs, compiler_opts, base_class=base_class,
+                     skip_srcs=srcs_excl, skip_incs=incs_excl)
 
 
 __all__ = [

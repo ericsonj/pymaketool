@@ -547,3 +547,57 @@ class TestMkWithSkip(unittest.TestCase):
         incs = [str(i) for i in modules[0].incs]
         self.assertTrue(any("inc" in i for i in incs))
         self.assertFalse(any("test_inc" in i for i in incs))
+
+
+class TestSkipPatternRetention(unittest.TestCase):
+    """skip()/dict exclude patterns must be retained on the module, prefixed
+    with the module path, for emission into srcs.mk."""
+
+    @pytest.fixture(autouse=True)
+    def _tmp_path(self, tmp_path):
+        self.tmp_path = tmp_path
+
+    def _write_mk(self, body):
+        (self.tmp_path / "main.c").write_text("")
+        mk_file = self.tmp_path / "mk.py"
+        mk_file.write_text("from pm import mk, skip, find_srcs\n" + body)
+        return mk_file
+
+    def test_skip_srcs_retained_and_prefixed(self):
+        from pymakelib import prelib
+        mk_file = self._write_mk('mk(srcs=skip("test*"))\n')
+        modules = prelib.readModule(mk_file, {}, project_root=self.tmp_path)
+        self.assertEqual(modules[0].skip_srcs_patterns, ["./test*"])
+
+    def test_skip_dict_form_retained(self):
+        from pymakelib import prelib
+        mk_file = self._write_mk('mk(srcs={"exclude": ["test*", "mock_*"]})\n')
+        modules = prelib.readModule(mk_file, {}, project_root=self.tmp_path)
+        self.assertEqual(modules[0].skip_srcs_patterns, ["./test*", "./mock_*"])
+
+    def test_skip_incs_retained_and_prefixed(self):
+        from pymakelib import prelib
+        mk_file = self._write_mk('mk(incs=skip("internal*"))\n')
+        modules = prelib.readModule(mk_file, {}, project_root=self.tmp_path)
+        self.assertEqual(modules[0].skip_incs_patterns, ["./internal*"])
+
+    def test_explicit_list_retains_nothing(self):
+        from pymakelib import prelib
+        mk_file = self._write_mk('mk(srcs=["main.c"])\n')
+        modules = prelib.readModule(mk_file, {}, project_root=self.tmp_path)
+        self.assertEqual(modules[0].skip_srcs_patterns, [])
+        self.assertEqual(modules[0].skip_incs_patterns, [])
+
+    def test_bare_mk_retains_nothing(self):
+        from pymakelib import prelib
+        mk_file = self._write_mk('mk()\n')
+        modules = prelib.readModule(mk_file, {}, project_root=self.tmp_path)
+        self.assertEqual(modules[0].skip_srcs_patterns, [])
+
+    def test_find_srcs_exclude_not_retained(self):
+        """find_srcs(exclude=...) collapses before mk() sees it — documented limitation."""
+        from pymakelib import prelib
+        (self.tmp_path / "test_x.c").write_text("")
+        mk_file = self._write_mk('mk(srcs=find_srcs(exclude=["test*"]))\n')
+        modules = prelib.readModule(mk_file, {}, project_root=self.tmp_path)
+        self.assertEqual(modules[0].skip_srcs_patterns, [])

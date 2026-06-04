@@ -57,6 +57,12 @@ def skip(*patterns: str) -> ExcludeFilter:
     of a plain list, it auto-discovers sources/includes and filters out any
     file or directory whose name matches one of the fnmatch patterns.
 
+    These patterns are retained and emitted into the generated ``srcs.mk`` as
+    an informational ``SKIP_PATTERNS`` variable (prefixed with the module path).
+    Note: patterns passed via ``find_srcs(exclude=...)`` / ``find_incs(exclude=...)``
+    are resolved to a bare list before ``mk()`` sees them and are NOT emitted —
+    use the ``skip()`` / dict form if you want them recorded in ``srcs.mk``.
+
     Args:
         *patterns: Fnmatch patterns for files/directories to skip.
 
@@ -92,7 +98,8 @@ def __getmodule_caller(func):
     return parentframe.f_code.co_filename
 
 
-def _register_module(caller_file, srcs=None, incs=None, compiler_opts=None, base_class=None):
+def _register_module(caller_file, srcs=None, incs=None, compiler_opts=None, base_class=None,
+                     skip_srcs=None, skip_incs=None):
     """Internal: register a module with an already-resolved caller file path.
 
     This is the core implementation used by both module() and the mk package.
@@ -102,12 +109,18 @@ def _register_module(caller_file, srcs=None, incs=None, compiler_opts=None, base
     Args:
         base_class: Module base class (BasicCModule or BasicCppModule).
                     Defaults to BasicCModule if None.
+        skip_srcs:  Exclude fnmatch patterns from skip()/dict srcs, retained for
+                    emission into srcs.mk (module-relative, prefixed later).
+        skip_incs:  Exclude fnmatch patterns from skip()/dict incs.
     """
     if base_class is None:
         base_class = _module.BasicCModule
 
     @_module.ModuleClass
     class _SimpleModule(base_class):
+
+        skip_srcs_patterns = list(skip_srcs or [])
+        skip_incs_patterns = list(skip_incs or [])
 
         # pylint: disable=no-self-argument
         def get_path(_self):

@@ -318,7 +318,13 @@ def readModule(modPath, compilerOpts, goals=None, project_root: Path | None = No
             log.debug(
                 f"\'{type(moduleInstance).__name__}\' return empty compiler options")
 
-        m = Module(srcs, incs, flags, modPath, staticLib=staticLib)
+        # Prefix retained skip patterns with module_path (e.g. "test*" -> "app/test*")
+        # so they share the project-root-relative namespace of mod.srcs/CSRC.
+        _mpath = getattr(moduleInstance, 'module_path', '') or ''
+        skip_srcs = [_mpath + p for p in getattr(moduleInstance, 'skip_srcs_patterns', [])]
+        skip_incs = [_mpath + p for p in getattr(moduleInstance, 'skip_incs_patterns', [])]
+        m = Module(srcs, incs, flags, modPath, staticLib=staticLib,
+                   skip_srcs_patterns=skip_srcs, skip_incs_patterns=skip_incs)
         if moduleInstance.module_name:
             m.module_name = moduleInstance.module_name
         modules.append(m)

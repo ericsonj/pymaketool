@@ -107,7 +107,8 @@ class StaticLibrary:
 
 
 class Module:
-    def __init__(self, srcs, incs, flags, filename, staticLib: StaticLibrary = None):
+    def __init__(self, srcs, incs, flags, filename, staticLib: StaticLibrary = None,
+                 skip_srcs_patterns=None, skip_incs_patterns=None):
         self.srcs = srcs
         self.incs = incs
         self.flags = flags
@@ -115,6 +116,8 @@ class Module:
         self.module_name = ""
         self.staticLib = staticLib
         self.orden = 0 if staticLib == None else staticLib.orden
+        self.skip_srcs_patterns = skip_srcs_patterns or []
+        self.skip_incs_patterns = skip_incs_patterns or []
 
     def isEmpty(self):
         if not self.srcs and not self.incs and not self.staticLib:
@@ -280,6 +283,11 @@ class AbstractModule(ABC):
 
     def __init__(self) -> None:
         super().__init__()
+        # Skip/exclude fnmatch patterns retained for emission into srcs.mk.
+        # Defaults keep class-based / auto-discover / add_library modules empty;
+        # the mk()/skip() path sets these as class attrs before instantiation.
+        self.skip_srcs_patterns = getattr(self, 'skip_srcs_patterns', [])
+        self.skip_incs_patterns = getattr(self, 'skip_incs_patterns', [])
         self.module_name = self.get_module_name()
         self.path = self.get_path()
         self.dir = Path(self.path).parent

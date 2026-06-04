@@ -258,6 +258,11 @@ def main():
                 srcsfile.write("{}ASSRC += {}\n".format(prefixSrcs, src))
             all_srcs.append(str(src))
 
+        # Informational record of skip/exclude patterns (module-path prefixed).
+        _skips = (getattr(mod, 'skip_srcs_patterns', []) or []) + (getattr(mod, 'skip_incs_patterns', []) or [])
+        for pat in dict.fromkeys(_skips):
+            srcsfile.write("SKIP_PATTERNS += {}\n".format(pat))
+
         srcsfile.write("\n")
 
         if not mod.staticLib:
